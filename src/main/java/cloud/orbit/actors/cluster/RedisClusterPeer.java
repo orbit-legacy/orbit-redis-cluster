@@ -28,13 +28,14 @@
 
 package cloud.orbit.actors.cluster;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.cluster.impl.RedisConcurrentMap;
 import cloud.orbit.actors.cluster.impl.RedisDB;
 import cloud.orbit.actors.cluster.impl.RedisKeyGenerator;
 import cloud.orbit.actors.cluster.impl.RedisPubSubListener;
 import cloud.orbit.concurrent.Task;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -126,6 +127,7 @@ public class RedisClusterPeer implements ClusterPeer
     }
 
     private void syncNodes() {
+        // TODO: Keys can be pretty slow in redis, perhaps use a list?
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, "*");
 
         List<NodeAddress> nodeAddresses = new ArrayList<>();
@@ -169,7 +171,8 @@ public class RedisClusterPeer implements ClusterPeer
     @Override
     public void leave()
     {
-
+        final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
+        redisDb.getGenericConnection().del(nodeKey);
     }
 
     @Override
