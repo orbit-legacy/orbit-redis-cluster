@@ -6,6 +6,8 @@ Orbit Redis Cluster Implementation
 [![Build Status](https://img.shields.io/travis/orbit/orbit-redis-cluster.svg)](https://travis-ci.org/orbit/orbit-redis-cluster)
 [![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/orbit/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+_Warning: This is a very crude first pass prototype and is not intended for use. There are many optimizations still to be performed._
+
 Developer & License
 ======
 This project was developed by [Electronic Arts](http://www.ea.com) and is licensed under the [BSD 3-Clause License](LICENSE).
