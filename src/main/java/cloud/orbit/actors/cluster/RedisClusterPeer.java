@@ -54,8 +54,12 @@ public class RedisClusterPeer implements ClusterPeer
     private MessageListener messageListener;
     private NodeAddress localAddress = new NodeAddressImpl(UUID.randomUUID());
     private String clusterName;
-    private final RedisDB redisDb = new RedisDB();
-    private final String redisUri;
+    private final RedisDB redisNodeDirectoryDb = new RedisDB();
+    private final RedisDB redisPubSubDb = new RedisDB();
+    private final RedisDB redisActorDirectoryDb = new RedisDB();
+    private final String redisNodeDirectoryUri;
+    private final String redisPubSubUri;
+    private final String redisActorDirectoryUri;
     private final Integer nodeLifetimeSecs;
 
     private final ConcurrentMap<String, RedisConcurrentMap<?, ?>> cacheManager = new ConcurrentHashMap<>();
@@ -63,19 +67,28 @@ public class RedisClusterPeer implements ClusterPeer
     private RedisPubSubListener pubSubListener = new RedisPubSubListener(this);
 
     public RedisClusterPeer(final String redisUri) {
-        this(redisUri, 20);
-    }
-
-    public RedisClusterPeer() {
-        this("redis://localhost", 20);
+        this(redisUri, redisUri, redisUri, 20);
     }
 
     public RedisClusterPeer(final String redisUri, final Integer nodeLifetimeSecs) {
-        this.redisUri = redisUri;
+        this(redisUri, redisUri, redisUri, nodeLifetimeSecs);
+    }
+
+    public RedisClusterPeer(final String redisNodeDirectoryUri, final String redisPubSubUri, final String redisActorDirectoryUri) {
+        this(redisNodeDirectoryUri, redisPubSubUri, redisActorDirectoryUri, 20);
+    }
+
+    public RedisClusterPeer() {
+        this("redis://localhost", "redis://localhost", "redis://localhost", 20);
+    }
+
+    public RedisClusterPeer(final String redisNodeDirectoryUri, final String redisPubSubUri, final String redisActorDirectoryUri, final Integer nodeLifetimeSecs) {
+        this.redisNodeDirectoryUri = redisNodeDirectoryUri;
+        this.redisPubSubUri = redisPubSubUri;
+        this.redisActorDirectoryUri = redisActorDirectoryUri;
         this.nodeLifetimeSecs = nodeLifetimeSecs;
 
     }
-
 
     @Override
     @SuppressWarnings("unchecked")
@@ -83,7 +96,7 @@ public class RedisClusterPeer implements ClusterPeer
     {
         RedisConcurrentMap<?, ?> result = cacheManager.get(name);
         if(result == null) {
-            RedisConcurrentMap<?, ?> temp = new RedisConcurrentMap<K, V>(name, clusterName, redisDb);
+            RedisConcurrentMap<?, ?> temp = new RedisConcurrentMap<K, V>(name, clusterName, redisActorDirectoryDb);
             result = cacheManager.putIfAbsent(name, temp);
             if(result == null)
             {
@@ -107,13 +120,15 @@ public class RedisClusterPeer implements ClusterPeer
 
         this.clusterName = clusterName;
 
-        redisDb.init(redisUri);
+        redisNodeDirectoryDb.init(redisNodeDirectoryUri);
+        redisPubSubDb.init(redisPubSubUri);
+        redisActorDirectoryDb.init(redisActorDirectoryUri);
 
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
 
         // Subscribe to Pub Sub
-        redisDb.getPubSubConnection().addListener(pubSubListener);
-        redisDb.getPubSubConnection().subscribe(nodeKey);
+        redisPubSubDb.getPubSubConnection().addListener(pubSubListener);
+        redisPubSubDb.getPubSubConnection().subscribe(nodeKey);
 
         writeMyEntry();
         syncNodes();
@@ -123,7 +138,7 @@ public class RedisClusterPeer implements ClusterPeer
 
     private void writeMyEntry() {
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisDb.getGenericConnection().setex(nodeKey, nodeLifetimeSecs, localAddress.toString());
+        redisNodeDirectoryDb.getGenericConnection().setex(nodeKey, nodeLifetimeSecs, localAddress.toString());
     }
 
     private void syncNodes() {
@@ -131,9 +146,9 @@ public class RedisClusterPeer implements ClusterPeer
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, "*");
 
         List<NodeAddress> nodeAddresses = new ArrayList<>();
-        List<String> keys = redisDb.getGenericConnection().keys(nodeKey);
+        List<String> keys = redisNodeDirectoryDb.getGenericConnection().keys(nodeKey);
         for(final String key: keys) {
-            final String rawKey = redisDb.getGenericConnection().get(key);
+            final String rawKey = redisNodeDirectoryDb.getGenericConnection().get(key);
             nodeAddresses.add(new NodeAddressImpl(UUID.fromString(rawKey)));
         }
 
@@ -146,7 +161,7 @@ public class RedisClusterPeer implements ClusterPeer
         // TODO: Base64 is not efficient, choose something else
         final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
         final String rawMessage = localAddress.toString() + "//" + Base64.getEncoder().encodeToString(message);
-        redisDb.getGenericConnection().publish(targetNodeKey, rawMessage);
+        redisPubSubDb.getGenericConnection().publish(targetNodeKey, rawMessage);
     }
 
     public void receiveMessage(final String rawMessage) {
@@ -172,7 +187,7 @@ public class RedisClusterPeer implements ClusterPeer
     public void leave()
     {
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisDb.getGenericConnection().del(nodeKey);
+        redisNodeDirectoryDb.getGenericConnection().del(nodeKey);
     }
 
     @Override
