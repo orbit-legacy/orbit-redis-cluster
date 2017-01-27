@@ -8,6 +8,29 @@ Orbit Redis Cluster Implementation
 
 _Warning: This is a very crude first pass prototype and is not intended for use. There are many optimizations still to be performed._
 
+Example Usage
+=============
+
+URI Format: redis://host:port
+
+```java
+final RedisClusterPeer clusterPeer = new RedisClusterBuilder()
+    .actorDirectoryUri(actorDirUri, actorDirClustered)
+    .nodeDirectoryUri(nodeDirUri, nodeDirClustered)
+    .messagingUris(Arrays.asList(
+                    messagingUri1,
+                    messagingUri2
+    ))
+    .build();
+
+final Stage stage = new Stage.Builder()
+    .clusterName("myCluster")
+    .nodeName("client")
+    .mode(Stage.StageMode.CLIENT)
+    .clusterPeer(clusterPeer)
+    .build();
+```
+
 Developer & License
 ======
 This project was developed by [Electronic Arts](http://www.ea.com) and is licensed under the [BSD 3-Clause License](LICENSE).
