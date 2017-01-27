@@ -25,8 +25,6 @@ final RedisClusterPeer clusterPeer = new RedisClusterBuilder()
 
 final Stage stage = new Stage.Builder()
     .clusterName("myCluster")
-    .nodeName("client")
-    .mode(Stage.StageMode.CLIENT)
     .clusterPeer(clusterPeer)
     .build();
 ```
