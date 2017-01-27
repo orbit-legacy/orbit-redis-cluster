@@ -28,33 +28,114 @@
 
 package cloud.orbit.actors.cluster.impl;
 
-import com.lambdaworks.redis.RedisClient;
-import com.lambdaworks.redis.api.async.RedisAsyncCommands;
-import com.lambdaworks.redis.api.sync.RedisCommands;
-import com.lambdaworks.redis.pubsub.api.async.RedisPubSubAsyncCommands;
-import com.lambdaworks.redis.pubsub.api.sync.RedisPubSubCommands;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.codec.SerializationCodec;
+import org.redisson.config.Config;
+import org.redisson.config.ReadMode;
+
+import com.github.ssedano.hash.JumpConsistentHash;
+
+import cloud.orbit.actors.cluster.RedisClusterConfig;
+import cloud.orbit.exception.UncheckedException;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Created by joeh@ea.com on 2016-12-13.
  */
 public class RedisDB
 {
-    private RedisClient client = null;
-    private RedisCommands<String, String> genericConnection = null;
-    private RedisPubSubCommands<String, String> pubSubConnection = null;
+    private RedisClusterConfig redisClusterConfig = null;
+    RedissonClient nodeDirectoryClient = null;
+    RedissonClient actorDirectoryClient = null;
+    List<RedissonClient> messagingClients = new ArrayList<>();
 
-    public void init(final String redisUri) {
-        client = RedisClient.create(redisUri);
-        genericConnection = client.connect().sync();
-        pubSubConnection = client.connectPubSub().sync();
+
+    public RedisDB(final RedisClusterConfig redisClusterConfig)
+    {
+        this.redisClusterConfig = redisClusterConfig;
+
+        nodeDirectoryClient = createClient(
+                redisClusterConfig.getNodeDirectoryUri(),
+                redisClusterConfig.getNodeDirectoryClustered(),
+                true
+        );
+
+        actorDirectoryClient = createClient(
+                redisClusterConfig.getActorDirectoryUri(),
+                redisClusterConfig.getActorDirectoryClustered(),
+                true
+        );
+
+        List<String> masters = redisClusterConfig.getMessagingUris();
+        for (final String uri : masters)
+        {
+            messagingClients.add(createClient(uri, false, false));
+
+        }
     }
 
-    public RedisCommands<String, String> getGenericConnection() {
-        return genericConnection;
+    public RedissonClient getNodeDirectoryClient()
+    {
+        return nodeDirectoryClient;
     }
 
-    public RedisPubSubCommands<String, String> getPubSubConnection() {
-        return pubSubConnection;
+    public RedissonClient getActorDirectoryClient()
+    {
+        return actorDirectoryClient;
     }
 
+
+    public RedissonClient getMessagingClient(final String channel)
+    {
+        final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(channel, messagingClients.size());
+        return messagingClients.get(jumpConsistentHash);
+    }
+
+    private RedissonClient createClient(final String uri, final Boolean clustered, final Boolean useJavaSerializer)
+    {
+        final URI realUri = URI.create(uri);
+
+        if (!realUri.getScheme().equalsIgnoreCase("redis"))
+        {
+            throw new UncheckedException("Invalid Redis URI.");
+        }
+
+        String host = realUri.getHost();
+        if (host == null) host = "localhost";
+
+        Integer port = realUri.getPort();
+        if (port == -1) port = 6379;
+
+        final String resolvedUri = host + ":" + port;
+
+        final Config redissonConfig = new Config();
+
+        if (useJavaSerializer)
+        {
+            redissonConfig.setCodec(new SerializationCodec());
+        }
+
+        if (clustered)
+        {
+            redissonConfig.useClusterServers()
+                    .addNodeAddress(resolvedUri)
+                    .setMasterConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
+                    .setMasterConnectionMinimumIdleSize(1)
+                    .setReadMode(ReadMode.MASTER);
+        }
+        else
+        {
+            redissonConfig.useSingleServer()
+                    .setAddress(resolvedUri)
+                    .setConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
+                    .setConnectionMinimumIdleSize(1);
+        }
+
+        return Redisson.create(redissonConfig);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -28,44 +28,34 @@
 
 package cloud.orbit.actors.cluster.impl;
 
-import cloud.orbit.exception.UncheckedException;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Base64;
+import java.io.Serializable;
+import java.util.UUID;
 
 /**
- * Created by joeh@ea.com on 2016-12-13.
+ * Created by jhegarty on 2017-01-25.
  */
-public class RedisSerializer
+public class RedisMsg implements Serializable
 {
-    static <T> String serialize(T myClass) {
-        // TODO: Base64 and Java Serialization are both ineffecient, should find something better
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(myClass);
-            oos.close();
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
-        }
-        catch (Exception e) {
-            throw new UncheckedException(e);
-        }
+    private UUID senderAddress;
+    private byte[] messageContents;
+
+    public UUID getSenderAddress()
+    {
+        return senderAddress;
     }
 
-    @SuppressWarnings("unchecked")
-    static <T> T deserialize(final String input) {
-        // TODO: Base64 and Java Serialization are both ineffecient, should find something better
-        try {
-            byte[] stream = Base64.getDecoder().decode(input);
-            ByteArrayInputStream bais = new ByteArrayInputStream(stream);
-            ObjectInputStream ois = new ObjectInputStream(bais);
-            ois.close();
-            return (T) ois.readObject();
-        } catch (Exception e) {
-            throw new UncheckedException(e);
-        }
+    public void setSenderAddress(UUID senderAddress)
+    {
+        this.senderAddress = senderAddress;
+    }
+
+    public byte[] getMessageContents()
+    {
+        return messageContents;
+    }
+
+    public void setMessageContents(byte[] messageContents)
+    {
+        this.messageContents = messageContents;
     }
 }

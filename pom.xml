@@ -30,20 +30,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-	
-	<parent>
-		<groupId>cloud.orbit</groupId>
-		<artifactId>orbit-java-parent</artifactId>
-		<version>1</version>
-	</parent>
-	
-	<groupId>cloud.orbit</groupId>
+
+    <parent>
+        <groupId>cloud.orbit</groupId>
+        <artifactId>orbit-java-parent</artifactId>
+        <version>1</version>
+    </parent>
+
+    <groupId>cloud.orbit</groupId>
     <artifactId>orbit-redis-cluster</artifactId>
     <version>0.1.2-SNAPSHOT</version>
     <name>Orbit Redis Cluster</name>
 
     <properties>
-    	<orbit.version>0.9.14</orbit.version>
+        <orbit.version>0.9.14</orbit.version>
     </properties>
 
     <scm>
@@ -61,9 +61,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </dependency>
 
         <dependency>
-            <groupId>biz.paluch.redis</groupId>
-            <artifactId>lettuce</artifactId>
-            <version>4.3.0.Final</version>
+            <groupId>com.github.ssedano</groupId>
+            <artifactId>jump-consistent-hash</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.2.3</version>
         </dependency>
     </dependencies>
 </project>
