@@ -11,7 +11,7 @@ _Warning: This is a very crude first pass prototype and is not intended for use.
 Example Usage
 =============
 
-URI Format: redis://host:port
+URI Format: `redis://host:port`
 
 ```java
 final RedisClusterPeer clusterPeer = new RedisClusterBuilder()
