@@ -91,6 +91,27 @@ public class RedisClusterBuilder
         return this;
     }
 
+    public RedisClusterBuilder enableCompression() {
+        redisClusterConfig.setUseCompression(true);
+        return this;
+    }
+
+    public RedisClusterBuilder disableCompression() {
+        redisClusterConfig.setUseCompression(false);
+        return this;
+    }
+
+    public RedisClusterBuilder enableEncryption(final String encryptionKey) {
+        redisClusterConfig.setUseEncryption(true);
+        redisClusterConfig.setEncryptionKey(encryptionKey);
+        return this;
+    }
+
+    public RedisClusterBuilder disableEncryption() {
+        redisClusterConfig.setUseEncryption(false);
+        return this;
+    }
+
     public RedisClusterPeer build() {
         return new RedisClusterPeer(redisClusterConfig);
     }

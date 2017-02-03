@@ -46,6 +46,9 @@ public class RedisClusterConfig
     private Integer maxRedisConnections = 10;
     private Integer actorDirectoryHashBuckets = 128;
     private Boolean actorDirectoryHashingEnabled = true;
+    private Boolean useCompression = true;
+    private Boolean useEncryption = false;
+    private String encryptionKey = "";
 
 
     public String getActorDirectoryUri()
@@ -139,5 +142,35 @@ public class RedisClusterConfig
     public void setActorDirectoryHashingEnabled(final Boolean actorDirectoryHashingEnabled)
     {
         this.actorDirectoryHashingEnabled = actorDirectoryHashingEnabled;
+    }
+
+    public Boolean getUseCompression()
+    {
+        return useCompression;
+    }
+
+    public void setUseCompression(final Boolean useCompression)
+    {
+        this.useCompression = useCompression;
+    }
+
+    public Boolean getUseEncryption()
+    {
+        return useEncryption;
+    }
+
+    public void setUseEncryption(final Boolean useEncryption)
+    {
+        this.useEncryption = useEncryption;
+    }
+
+    public String getEncryptionKey()
+    {
+        return encryptionKey;
+    }
+
+    public void setEncryptionKey(final String encryptionKey)
+    {
+        this.encryptionKey = encryptionKey;
     }
 }

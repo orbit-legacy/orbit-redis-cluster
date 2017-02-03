@@ -30,6 +30,8 @@ package cloud.orbit.actors.cluster.impl;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.Codec;
+import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.codec.SerializationCodec;
 import org.redisson.config.Config;
 import org.redisson.config.ReadMode;
@@ -50,9 +52,9 @@ import java.util.List;
 public class RedisDB
 {
     private RedisClusterConfig redisClusterConfig = null;
-    RedissonClient nodeDirectoryClient = null;
-    RedissonClient actorDirectoryClient = null;
-    List<RedissonClient> messagingClients = new ArrayList<>();
+    private RedissonClient nodeDirectoryClient = null;
+    private RedissonClient actorDirectoryClient = null;
+    private List<RedissonClient> messagingClients = new ArrayList<>();
 
 
     public RedisDB(final RedisClusterConfig redisClusterConfig)
@@ -98,28 +100,43 @@ public class RedisDB
 
     private RedissonClient createClient(final String uri, final Boolean clustered, final Boolean useJavaSerializer)
     {
+        // Resolve URI
         final URI realUri = URI.create(uri);
-
         if (!realUri.getScheme().equalsIgnoreCase("redis"))
         {
             throw new UncheckedException("Invalid Redis URI.");
         }
-
         String host = realUri.getHost();
         if (host == null) host = "localhost";
-
         Integer port = realUri.getPort();
         if (port == -1) port = 6379;
-
         final String resolvedUri = host + ":" + port;
 
         final Config redissonConfig = new Config();
 
-        if (useJavaSerializer)
-        {
-            redissonConfig.setCodec(new SerializationCodec());
+        Codec currentCodec;
+
+        // Low level serializer
+        if (useJavaSerializer) {
+            currentCodec = new SerializationCodec();
+        }
+        else {
+            currentCodec = new JsonJacksonCodec();
         }
 
+        // Compression?
+        if(redisClusterConfig.getUseCompression()) {
+            currentCodec = new RedisCompressionCodec(currentCodec);
+        }
+
+        // Encryption?
+        if(redisClusterConfig.getUseEncryption()) {
+            currentCodec = new RedisEncryptionCodec(redisClusterConfig.getEncryptionKey(), currentCodec);
+        }
+
+        redissonConfig.setCodec(currentCodec);
+
+        // Clustered or not
         if (clustered)
         {
             redissonConfig.useClusterServers()
