@@ -98,6 +98,16 @@ public class RedisDB
         return messagingClients.get(jumpConsistentHash);
     }
 
+    public void shutdownConnections() {
+        nodeDirectoryClient.shutdown();
+        actorDirectoryClient.shutdown();
+        for (final RedissonClient messagingClient : messagingClients)
+        {
+            messagingClient.shutdown();
+        }
+
+    }
+
     private RedissonClient createClient(final String uri, final Boolean clustered, final Boolean useJavaSerializer)
     {
         // Resolve URI

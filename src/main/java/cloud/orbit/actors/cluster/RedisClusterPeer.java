@@ -169,6 +169,8 @@ public class RedisClusterPeer implements ClusterPeer
     {
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
         redisDB.getNodeDirectoryClient().getBucket(nodeKey).delete();
+
+        redisDB.shutdownConnections();
     }
 
     @Override
