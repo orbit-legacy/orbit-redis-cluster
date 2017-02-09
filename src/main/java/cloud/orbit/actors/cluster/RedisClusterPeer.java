@@ -28,6 +28,7 @@
 
 package cloud.orbit.actors.cluster;
 
+import org.redisson.api.RFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,9 +77,12 @@ public class RedisClusterPeer implements ClusterPeer
         if (result == null)
         {
             ConcurrentMap<?, ?> targetMap = null;
-            if(config.getActorDirectoryHashingEnabled()) {
-                targetMap = new RedisShardedMap<K,V>(realName, redisDB.getActorDirectoryClient(), config.getActorDirectoryHashBuckets());
-            } else {
+            if (config.getActorDirectoryHashingEnabled())
+            {
+                targetMap = new RedisShardedMap<K, V>(realName, redisDB.getActorDirectoryClient(), config.getActorDirectoryHashBuckets());
+            }
+            else
+            {
                 targetMap = redisDB.getActorDirectoryClient().getMap(realName);
             }
             result = cacheManager.putIfAbsent(realName, targetMap);
@@ -143,17 +147,38 @@ public class RedisClusterPeer implements ClusterPeer
     @Override
     public void sendMessage(final NodeAddress toAddress, final byte[] message)
     {
-        final RedisMsg redisMsg = new RedisMsg();
-        redisMsg.setMessageContents(message);
-        redisMsg.setSenderAddress(localAddress.asUUID());
-        final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
-        redisDB.getMessagingClient(targetNodeKey).getTopic(targetNodeKey).publishAsync(redisMsg);
+        Task.runAsync(() ->
+                {
+                    final RedisMsg redisMsg = new RedisMsg();
+                    redisMsg.setMessageContents(message);
+                    redisMsg.setSenderAddress(localAddress.asUUID());
+                    final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
+                    redisDB.getMessagingClient(targetNodeKey).getTopic(targetNodeKey).publishAsync(redisMsg)
+                            .exceptionally((e) ->
+                            {
+                                logger.error("Error sending message", e);
+                                return 0L;
+                            });
+                },
+                config.getExecutorService()
+        );
+
     }
 
     public void receiveMessage(final RedisMsg rawMessage)
     {
-        final NodeAddress nodeAddr = new NodeAddressImpl(rawMessage.getSenderAddress());
-        messageListener.receive(nodeAddr, rawMessage.getMessageContents());
+        Task.runAsync(() ->
+                {
+                    final NodeAddress nodeAddr = new NodeAddressImpl(rawMessage.getSenderAddress());
+                    messageListener.receive(nodeAddr, rawMessage.getMessageContents());
+                },
+                config.getExecutorService()
+        )
+                .exceptionally((e) ->
+                {
+                    logger.error("Error receiving message", e);
+                    return null;
+                });
     }
 
     @Override
