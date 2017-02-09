@@ -31,6 +31,7 @@ package cloud.orbit.actors.cluster;
 import java.security.Key;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Created by jhegarty on 2017-01-19.
@@ -109,6 +110,11 @@ public class RedisClusterBuilder
 
     public RedisClusterBuilder disableEncryption() {
         redisClusterConfig.setUseEncryption(false);
+        return this;
+    }
+
+    public RedisClusterBuilder executorService(final ExecutorService executorService) {
+        redisClusterConfig.setExecutorService(executorService);
         return this;
     }
 

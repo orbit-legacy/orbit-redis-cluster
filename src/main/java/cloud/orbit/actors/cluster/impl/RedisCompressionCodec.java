@@ -59,14 +59,15 @@ public class RedisCompressionCodec implements Codec
         @Override
         public Object decode(ByteBuf buf, State state) throws IOException {
             final int rawLength = buf.readableBytes();
-            final byte[] compressedBytes = new byte[rawLength - 4];
+            final int compressedLength = rawLength - 4;
+            final byte[] compressedBytes = new byte[compressedLength];
             final Integer decompressedLength = buf.readInt();
             buf.readBytes(compressedBytes);
 
-            byte[] outBuf = new byte[decompressedLength];
+            final byte[] decompressedBytes = new byte[decompressedLength];
             final LZ4SafeDecompressor decompressor = factory.safeDecompressor();
-            decompressor.decompress(compressedBytes, outBuf);
-            final ByteBuf bf = Unpooled.wrappedBuffer(outBuf);
+            decompressor.decompress(compressedBytes, decompressedBytes);
+            final ByteBuf bf = Unpooled.wrappedBuffer(decompressedBytes);
 
             return innerCodec.getValueDecoder().decode(bf, state);
         }
@@ -76,12 +77,12 @@ public class RedisCompressionCodec implements Codec
         @Override
         public byte[] encode(Object in) throws IOException {
             final LZ4Compressor compressor = factory.highCompressor();
-            final byte[] innerCodecBytes = innerCodec.getValueEncoder().encode(in);
-            final byte[] wireBytes = compressor.compress(innerCodecBytes);
-            final ByteBuffer buffer = ByteBuffer.allocate(wireBytes.length + 4);
+            final byte[] uncompressedBytes = innerCodec.getValueEncoder().encode(in);
+            final byte[] compressedBytes = compressor.compress(uncompressedBytes);
+            final ByteBuffer buffer = ByteBuffer.allocate(compressedBytes.length + 4);
 
-            buffer.putInt(innerCodecBytes.length);
-            buffer.put(wireBytes);
+            buffer.putInt(uncompressedBytes.length);
+            buffer.put(compressedBytes);
 
             return buffer.array();
         }

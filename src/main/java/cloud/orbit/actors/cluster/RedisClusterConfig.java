@@ -31,6 +31,8 @@ package cloud.orbit.actors.cluster;
 import java.security.Key;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Created by jhegarty on 2017-01-19.
@@ -49,6 +51,7 @@ public class RedisClusterConfig
     private Boolean useCompression = true;
     private Boolean useEncryption = false;
     private String encryptionKey = "";
+    private ExecutorService executorService = ForkJoinPool.commonPool();
 
 
     public String getActorDirectoryUri()
@@ -172,5 +175,15 @@ public class RedisClusterConfig
     public void setEncryptionKey(final String encryptionKey)
     {
         this.encryptionKey = encryptionKey;
+    }
+
+    public ExecutorService getExecutorService()
+    {
+        return executorService;
+    }
+
+    public void setExecutorService(final ExecutorService executorService)
+    {
+        this.executorService = executorService;
     }
 }

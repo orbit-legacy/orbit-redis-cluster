@@ -35,6 +35,8 @@ import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.codec.SerializationCodec;
 import org.redisson.config.Config;
 import org.redisson.config.ReadMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.ssedano.hash.JumpConsistentHash;
 
@@ -55,27 +57,32 @@ public class RedisDB
     private RedissonClient nodeDirectoryClient = null;
     private RedissonClient actorDirectoryClient = null;
     private List<RedissonClient> messagingClients = new ArrayList<>();
+    private static Logger logger = LoggerFactory.getLogger(RedisDB.class);
 
 
     public RedisDB(final RedisClusterConfig redisClusterConfig)
     {
         this.redisClusterConfig = redisClusterConfig;
 
+        logger.info("Connecting to Redis node directory at '{}'...", redisClusterConfig.getNodeDirectoryUri());
         nodeDirectoryClient = createClient(
                 redisClusterConfig.getNodeDirectoryUri(),
                 redisClusterConfig.getNodeDirectoryClustered(),
                 true
         );
 
+        logger.info("Connecting to Redis actor directory at '{}'...", redisClusterConfig.getActorDirectoryUri());
         actorDirectoryClient = createClient(
                 redisClusterConfig.getActorDirectoryUri(),
                 redisClusterConfig.getActorDirectoryClustered(),
                 true
         );
 
+
         List<String> masters = redisClusterConfig.getMessagingUris();
         for (final String uri : masters)
         {
+            logger.info("Connecting to Redis messaging node at '{}'...", uri);
             messagingClients.add(createClient(uri, false, false));
 
         }

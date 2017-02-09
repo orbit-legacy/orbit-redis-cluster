@@ -99,7 +99,7 @@ public class RedisClusterPeer implements ClusterPeer
     @Override
     public Task<?> join(final String clusterName, final String nodeName)
     {
-        logger.info("Joining Redis Cluster...");
+        logger.info("Joining Redis Cluster '{}' as node '{}' [{}]...", clusterName, nodeName, localAddress.asUUID().toString());
 
         this.clusterName = clusterName;
         redisDB = new RedisDB(config);
