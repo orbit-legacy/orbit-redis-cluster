@@ -80,6 +80,41 @@ public class RedisClusterBuilder
         return this;
     }
 
+    public RedisClusterBuilder connectionTimeout(final Integer connectionTimeout) {
+        redisClusterConfig.setConnectionTimeout(connectionTimeout);
+        return this;
+    }
+
+    public RedisClusterBuilder generalTimeout(final Integer generalTimeout) {
+        redisClusterConfig.setGeneralTimeout(generalTimeout);
+        return this;
+    }
+
+    public RedisClusterBuilder idleTimeout(final Integer idleTimeout) {
+        redisClusterConfig.setIdleTimeout(idleTimeout);
+        return this;
+    }
+
+    public RedisClusterBuilder reconnectionTimeout(final Integer reconnectionTimeout) {
+        redisClusterConfig.setReconnectionTimeout(reconnectionTimeout);
+        return this;
+    }
+
+    public RedisClusterBuilder pingTimeout(final Integer pingTimeout) {
+        redisClusterConfig.setPingTimeout(pingTimeout);
+        return this;
+    }
+
+    public RedisClusterBuilder retryAttempts(final Integer retryAttempts) {
+        redisClusterConfig.setRetryAttempts(retryAttempts);
+        return this;
+    }
+
+    public RedisClusterBuilder retryInterval(final Integer retryInterval) {
+        redisClusterConfig.setRetryInterval(retryInterval);
+        return this;
+    }
+
     public RedisClusterBuilder enableActorDirectoryHashing(final Integer clusteredActoryDirectoryBuckets) {
         redisClusterConfig.setActorDirectoryHashingEnabled(true);
         redisClusterConfig.setActorDirectoryHashBuckets(clusteredActoryDirectoryBuckets);

@@ -42,6 +42,8 @@ import com.github.ssedano.hash.JumpConsistentHash;
 
 import cloud.orbit.actors.cluster.RedisClusterConfig;
 import cloud.orbit.exception.UncheckedException;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -159,7 +161,13 @@ public class RedisDB
             redissonConfig.useClusterServers()
                     .addNodeAddress(resolvedUri)
                     .setMasterConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
-                    .setMasterConnectionMinimumIdleSize(1)
+                    .setConnectTimeout(redisClusterConfig.getConnectionTimeout())
+                    .setTimeout(redisClusterConfig.getGeneralTimeout())
+                    .setIdleConnectionTimeout(redisClusterConfig.getIdleTimeout())
+                    .setReconnectionTimeout(redisClusterConfig.getReconnectionTimeout())
+                    .setPingTimeout(redisClusterConfig.getPingTimeout())
+                    .setRetryAttempts(redisClusterConfig.getRetryAttempts())
+                    .setRetryInterval(redisClusterConfig.getRetryInterval())
                     .setReadMode(ReadMode.MASTER);
         }
         else
@@ -167,7 +175,13 @@ public class RedisDB
             redissonConfig.useSingleServer()
                     .setAddress(resolvedUri)
                     .setConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
-                    .setConnectionMinimumIdleSize(1);
+                    .setConnectTimeout(redisClusterConfig.getConnectionTimeout())
+                    .setTimeout(redisClusterConfig.getGeneralTimeout())
+                    .setIdleConnectionTimeout(redisClusterConfig.getIdleTimeout())
+                    .setReconnectionTimeout(redisClusterConfig.getReconnectionTimeout())
+                    .setPingTimeout(redisClusterConfig.getPingTimeout())
+                    .setRetryAttempts(redisClusterConfig.getRetryAttempts())
+                    .setRetryInterval(redisClusterConfig.getRetryInterval());
         }
 
         return Redisson.create(redissonConfig);

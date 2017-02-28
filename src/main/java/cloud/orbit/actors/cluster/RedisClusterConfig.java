@@ -46,6 +46,13 @@ public class RedisClusterConfig
     private List<String> messagingUris = Arrays.asList("redis://localhost");
     private Integer nodeLifetimeSeconds = 20;
     private Integer maxRedisConnections = 10;
+    private Integer connectionTimeout = 3000;
+    private Integer generalTimeout = 3000;
+    private Integer idleTimeout = 3000;
+    private Integer reconnectionTimeout = 3000;
+    private Integer pingTimeout = 3000;
+    private Integer retryAttempts = 6;
+    private Integer retryInterval = 10000;
     private Integer actorDirectoryHashBuckets = 128;
     private Boolean actorDirectoryHashingEnabled = true;
     private Boolean useCompression = true;
@@ -185,5 +192,76 @@ public class RedisClusterConfig
     public void setExecutorService(final ExecutorService executorService)
     {
         this.executorService = executorService;
+    }
+
+
+    public Integer getConnectionTimeout()
+    {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(final Integer connectionTimeout)
+    {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public Integer getGeneralTimeout()
+    {
+        return generalTimeout;
+    }
+
+    public void setGeneralTimeout(final Integer generalTimeout)
+    {
+        this.generalTimeout = generalTimeout;
+    }
+
+    public Integer getIdleTimeout()
+    {
+        return idleTimeout;
+    }
+
+    public void setIdleTimeout(final Integer idleTimeout)
+    {
+        this.idleTimeout = idleTimeout;
+    }
+
+    public Integer getReconnectionTimeout()
+    {
+        return reconnectionTimeout;
+    }
+
+    public void setReconnectionTimeout(final Integer reconnectionTimeout)
+    {
+        this.reconnectionTimeout = reconnectionTimeout;
+    }
+
+    public Integer getPingTimeout()
+    {
+        return pingTimeout;
+    }
+
+    public void setPingTimeout(final Integer pingTimeout)
+    {
+        this.pingTimeout = pingTimeout;
+    }
+
+    public Integer getRetryAttempts()
+    {
+        return retryAttempts;
+    }
+
+    public void setRetryAttempts(final Integer retryAttempts)
+    {
+        this.retryAttempts = retryAttempts;
+    }
+
+    public Integer getRetryInterval()
+    {
+        return retryInterval;
+    }
+
+    public void setRetryInterval(final Integer retryInterval)
+    {
+        this.retryInterval = retryInterval;
     }
 }
