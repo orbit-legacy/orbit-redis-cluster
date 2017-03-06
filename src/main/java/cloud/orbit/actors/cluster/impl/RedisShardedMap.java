@@ -29,13 +29,13 @@
 package cloud.orbit.actors.cluster.impl;
 
 import org.redisson.api.RedissonClient;
-import org.redisson.executor.RedissonClassLoader;
 
 import com.github.ssedano.hash.JumpConsistentHash;
 
 import cloud.orbit.exception.NotImplementedException;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,13 +47,13 @@ import java.util.concurrent.ConcurrentMap;
 public class RedisShardedMap<K, V> implements ConcurrentMap<K, V>
 {
     private final Integer bucketCount;
-    private final RedissonClient redissonClient;
+    private final List<RedissonClient> redissonClients;
     private final String mapName;
     private final ConcurrentMap<String, ConcurrentMap<K, V>> cacheManager = new ConcurrentHashMap<>();
 
-    public RedisShardedMap(final String mapName, final RedissonClient redissonClient, final Integer bucketCount) {
+    public RedisShardedMap(final String mapName, final List<RedissonClient> redissonClients, final Integer bucketCount) {
         this.mapName = mapName;
-        this.redissonClient = redissonClient;
+        this.redissonClients = redissonClients;
         this.bucketCount = bucketCount;
     }
 
@@ -62,7 +62,8 @@ public class RedisShardedMap<K, V> implements ConcurrentMap<K, V>
         ConcurrentMap<K, V> result = cacheManager.get(realName);
         if (result == null)
         {
-            ConcurrentMap<K, V> temp = redissonClient.getMap(realName);
+            final Integer clientId = JumpConsistentHash.jumpConsistentHash(realName, redissonClients.size());
+            ConcurrentMap<K, V> temp = redissonClients.get(clientId).getMap(realName);
             result = cacheManager.putIfAbsent(realName, temp);
             if (result == null)
             {

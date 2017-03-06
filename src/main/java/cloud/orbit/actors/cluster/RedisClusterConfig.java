@@ -30,6 +30,7 @@ package cloud.orbit.actors.cluster;
 
 import java.security.Key;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -39,11 +40,12 @@ import java.util.concurrent.ForkJoinPool;
  */
 public class RedisClusterConfig
 {
-    private String actorDirectoryUri = "redis://localhost";
+    private List<String> actorDirectoryUris = Arrays.asList("redis://localhost");
     private Boolean actorDirectoryClustered = false;
-    private String nodeDirectoryUri = "redis://localhost";
+    private List<String> nodeDirectoryUris = Arrays.asList("redis://localhost");
     private Boolean nodeDirectoryClustered = false;
     private List<String> messagingUris = Arrays.asList("redis://localhost");
+    private Boolean messagingClustered = false;
     private Integer nodeLifetimeSeconds = 20;
     private Integer maxRedisConnections = 10;
     private Integer connectionTimeout = 3000;
@@ -53,32 +55,31 @@ public class RedisClusterConfig
     private Integer pingTimeout = 3000;
     private Integer retryAttempts = 6;
     private Integer retryInterval = 10000;
-    private Integer actorDirectoryHashBuckets = 128;
-    private Boolean actorDirectoryHashingEnabled = true;
+    private Integer shardingBuckets = 256;
     private Boolean useCompression = true;
     private Boolean useEncryption = false;
     private String encryptionKey = "";
     private ExecutorService executorService = ForkJoinPool.commonPool();
 
 
-    public String getActorDirectoryUri()
+    public List<String> getActorDirectoryUris()
     {
-        return actorDirectoryUri;
+        return actorDirectoryUris;
     }
 
-    public void setActorDirectoryUri(final String actorDirectoryUri)
+    public void setActorDirectoryUris(final List<String> actorDirectoryUris)
     {
-        this.actorDirectoryUri = actorDirectoryUri;
+        this.actorDirectoryUris = Collections.unmodifiableList(actorDirectoryUris);
     }
 
-    public String getNodeDirectoryUri()
+    public List<String> getNodeDirectoryUris()
     {
-        return nodeDirectoryUri;
+        return nodeDirectoryUris;
     }
 
-    public void setNodeDirectoryUri(final String nodeDirectoryUri)
+    public void setNodeDirectoryUris(final List<String> nodeDirectoryUris)
     {
-        this.nodeDirectoryUri = nodeDirectoryUri;
+        this.nodeDirectoryUris = Collections.unmodifiableList(nodeDirectoryUris);
     }
 
     public List<String> getMessagingUris()
@@ -88,9 +89,18 @@ public class RedisClusterConfig
 
     public void setMessagingUris(final List<String> messagingUris)
     {
-        this.messagingUris = messagingUris;
+        this.messagingUris = Collections.unmodifiableList(messagingUris);
     }
 
+    public Boolean getMessagingClustered()
+    {
+        return messagingClustered;
+    }
+
+    public void setMessagingClustered(final Boolean messagingClustered)
+    {
+        this.messagingClustered = messagingClustered;
+    }
 
     public Boolean getActorDirectoryClustered()
     {
@@ -133,26 +143,6 @@ public class RedisClusterConfig
         this.maxRedisConnections = maxRedisConnections;
     }
 
-
-    public Integer getActorDirectoryHashBuckets()
-    {
-        return actorDirectoryHashBuckets;
-    }
-
-    public void setActorDirectoryHashBuckets(final Integer actorDirectoryHashBuckets)
-    {
-        this.actorDirectoryHashBuckets = actorDirectoryHashBuckets;
-    }
-
-    public Boolean getActorDirectoryHashingEnabled()
-    {
-        return actorDirectoryHashingEnabled;
-    }
-
-    public void setActorDirectoryHashingEnabled(final Boolean actorDirectoryHashingEnabled)
-    {
-        this.actorDirectoryHashingEnabled = actorDirectoryHashingEnabled;
-    }
 
     public Boolean getUseCompression()
     {
@@ -263,5 +253,15 @@ public class RedisClusterConfig
     public void setRetryInterval(final Integer retryInterval)
     {
         this.retryInterval = retryInterval;
+    }
+
+    public Integer getShardingBuckets()
+    {
+        return shardingBuckets;
+    }
+
+    public void setShardingBuckets(final Integer shardingBuckets)
+    {
+        this.shardingBuckets = shardingBuckets;
     }
 }

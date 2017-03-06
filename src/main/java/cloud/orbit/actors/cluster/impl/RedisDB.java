@@ -42,11 +42,10 @@ import com.github.ssedano.hash.JumpConsistentHash;
 
 import cloud.orbit.actors.cluster.RedisClusterConfig;
 import cloud.orbit.exception.UncheckedException;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -56,8 +55,8 @@ import java.util.List;
 public class RedisDB
 {
     private RedisClusterConfig redisClusterConfig = null;
-    private RedissonClient nodeDirectoryClient = null;
-    private RedissonClient actorDirectoryClient = null;
+    private List<RedissonClient> nodeDirectoryClients = new ArrayList<>();
+    private List<RedissonClient> actorDirectoryClients = new ArrayList<>();
     private List<RedissonClient> messagingClients = new ArrayList<>();
     private static Logger logger = LoggerFactory.getLogger(RedisDB.class);
 
@@ -66,55 +65,69 @@ public class RedisDB
     {
         this.redisClusterConfig = redisClusterConfig;
 
-        logger.info("Connecting to Redis node directory at '{}'...", redisClusterConfig.getNodeDirectoryUri());
-        nodeDirectoryClient = createClient(
-                redisClusterConfig.getNodeDirectoryUri(),
-                redisClusterConfig.getNodeDirectoryClustered(),
-                true
-        );
+        final List<String> nodeDirectoryMasters = redisClusterConfig.getNodeDirectoryUris();
+        for (final String uri : nodeDirectoryMasters)
+        {
+            logger.info("Connecting to Redis Node Directory node at '{}'...", uri);
+            nodeDirectoryClients.add(createClient(uri, redisClusterConfig.getNodeDirectoryClustered(), true));
 
-        logger.info("Connecting to Redis actor directory at '{}'...", redisClusterConfig.getActorDirectoryUri());
-        actorDirectoryClient = createClient(
-                redisClusterConfig.getActorDirectoryUri(),
-                redisClusterConfig.getActorDirectoryClustered(),
-                true
-        );
+        }
+
+        final List<String> actorDirectoryMasters = redisClusterConfig.getActorDirectoryUris();
+        for (final String uri : actorDirectoryMasters)
+        {
+            logger.info("Connecting to Redis Actor Directory node at '{}'...", uri);
+            actorDirectoryClients.add(createClient(uri, redisClusterConfig.getActorDirectoryClustered(), true));
+
+        }
 
 
-        List<String> masters = redisClusterConfig.getMessagingUris();
-        for (final String uri : masters)
+        final List<String> messagingMasters = redisClusterConfig.getMessagingUris();
+        for (final String uri : messagingMasters)
         {
             logger.info("Connecting to Redis messaging node at '{}'...", uri);
-            messagingClients.add(createClient(uri, false, false));
+            messagingClients.add(createClient(uri, redisClusterConfig.getMessagingClustered(), false));
 
         }
     }
 
-    public RedissonClient getNodeDirectoryClient()
+    public List<RedissonClient> getNodeDirectoryClients()
     {
-        return nodeDirectoryClient;
+        return Collections.unmodifiableList(nodeDirectoryClients);
     }
 
-    public RedissonClient getActorDirectoryClient()
+    public List<RedissonClient> getActorDirectoryClients()
     {
-        return actorDirectoryClient;
+        return Collections.unmodifiableList(actorDirectoryClients);
     }
 
-
-    public RedissonClient getMessagingClient(final String channel)
+    public List<RedissonClient> getMessagingClients()
     {
-        final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(channel, messagingClients.size());
+        return Collections.unmodifiableList(messagingClients);
+    }
+
+    public RedissonClient getShardedNodeDirectoryClient(final String shardId)
+    {
+        final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, nodeDirectoryClients.size());
+        return nodeDirectoryClients.get(jumpConsistentHash);
+    }
+
+    public RedissonClient getShardedActorDirectoryClient(final String shardId)
+    {
+        final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, actorDirectoryClients.size());
+        return actorDirectoryClients.get(jumpConsistentHash);
+    }
+
+    public RedissonClient getShardedMessageClient(final String shardId)
+    {
+        final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, messagingClients.size());
         return messagingClients.get(jumpConsistentHash);
     }
 
     public void shutdownConnections() {
-        nodeDirectoryClient.shutdown();
-        actorDirectoryClient.shutdown();
-        for (final RedissonClient messagingClient : messagingClients)
-        {
-            messagingClient.shutdown();
-        }
-
+        nodeDirectoryClients.forEach(RedissonClient::shutdown);
+        actorDirectoryClients.forEach(RedissonClient::shutdown);
+        messagingClients.forEach(RedissonClient::shutdown);
     }
 
     private RedissonClient createClient(final String uri, final Boolean clustered, final Boolean useJavaSerializer)

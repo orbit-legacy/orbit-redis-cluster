@@ -28,7 +28,6 @@
 
 package cloud.orbit.actors.cluster;
 
-import java.security.Key;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -48,9 +47,19 @@ public class RedisClusterBuilder
         return this.nodeDirectoryUri(nodeDirectoryUri, false);
     }
 
-    public RedisClusterBuilder nodeDirectoryUri(final String nodeDirectoryUri, final Boolean clustered) {
-        redisClusterConfig.setNodeDirectoryUri(nodeDirectoryUri);
-        redisClusterConfig.setNodeDirectoryClustered(clustered);
+    public RedisClusterBuilder nodeDirectoryUri(final String nodeDirectoryUri, final Boolean redisClustering) {
+        redisClusterConfig.setNodeDirectoryUris(Arrays.asList(nodeDirectoryUri));
+        redisClusterConfig.setNodeDirectoryClustered(redisClustering);
+        return this;
+    }
+
+    public RedisClusterBuilder nodeDirectoryUris(final List<String> nodeDirectoryUris) {
+        return this.nodeDirectoryUris(nodeDirectoryUris, false);
+    }
+
+    public RedisClusterBuilder nodeDirectoryUris(final List<String> nodeDirectoryUris, final Boolean redisClustering) {
+        redisClusterConfig.setNodeDirectoryUris(nodeDirectoryUris);
+        redisClusterConfig.setNodeDirectoryClustered(redisClustering);
         return this;
     }
 
@@ -58,14 +67,40 @@ public class RedisClusterBuilder
         return this.actorDirectoryUri(actorDirectoryUri, false);
     }
 
-    public RedisClusterBuilder actorDirectoryUri(final String actorDirectoryUri, final Boolean clustered) {
-        redisClusterConfig.setActorDirectoryUri(actorDirectoryUri);
-        redisClusterConfig.setActorDirectoryClustered(clustered);
+    public RedisClusterBuilder actorDirectoryUri(final String actorDirectoryUri, final Boolean redisClustering) {
+        redisClusterConfig.setActorDirectoryUris(Arrays.asList(actorDirectoryUri));
+        redisClusterConfig.setActorDirectoryClustered(redisClustering);
         return this;
     }
 
+    public RedisClusterBuilder actorDirectoryUris(final List<String> actorDirectoryUris) {
+        return this.actorDirectoryUris(actorDirectoryUris, false);
+    }
+
+    public RedisClusterBuilder actorDirectoryUris(final List<String> actorDirectoryUris, final Boolean redisClustering) {
+        redisClusterConfig.setActorDirectoryUris(actorDirectoryUris);
+        redisClusterConfig.setActorDirectoryClustered(redisClustering);
+        return this;
+    }
+
+    public RedisClusterBuilder messagingUri(final String messagingUri) {
+        return this.messagingUri(messagingUri, false);
+    }
+
+    public RedisClusterBuilder messagingUri(final String messagingUri, final Boolean redisClustering) {
+        redisClusterConfig.setMessagingUris(Arrays.asList(messagingUri));
+        redisClusterConfig.setMessagingClustered(redisClustering);
+        return this;
+    }
+
+
     public RedisClusterBuilder messagingUris(final List<String> messagingUris) {
+        return this.messagingUris(messagingUris, false);
+    }
+
+    public RedisClusterBuilder messagingUris(final List<String> messagingUris, final Boolean redisClustering) {
         redisClusterConfig.setMessagingUris(messagingUris);
+        redisClusterConfig.setMessagingClustered(redisClustering);
         return this;
     }
 
@@ -115,15 +150,8 @@ public class RedisClusterBuilder
         return this;
     }
 
-    public RedisClusterBuilder enableActorDirectoryHashing(final Integer clusteredActoryDirectoryBuckets) {
-        redisClusterConfig.setActorDirectoryHashingEnabled(true);
-        redisClusterConfig.setActorDirectoryHashBuckets(clusteredActoryDirectoryBuckets);
-        return this;
-    }
-
-    public RedisClusterBuilder disableClusteredActorDirectory() {
-        redisClusterConfig.setActorDirectoryHashingEnabled(false);
-        redisClusterConfig.setActorDirectoryHashBuckets(0);
+    public RedisClusterBuilder shardingBuckets(final Integer shardingBuckets) {
+        redisClusterConfig.setShardingBuckets(shardingBuckets);
         return this;
     }
 

@@ -28,7 +28,7 @@
 
 package cloud.orbit.actors.cluster;
 
-import org.redisson.api.RFuture;
+import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,6 @@ import cloud.orbit.concurrent.Task;
 import cloud.orbit.tuples.Pair;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,15 +75,7 @@ public class RedisClusterPeer implements ClusterPeer
         ConcurrentMap<?, ?> result = cacheManager.get(realName);
         if (result == null)
         {
-            ConcurrentMap<?, ?> targetMap = null;
-            if (config.getActorDirectoryHashingEnabled())
-            {
-                targetMap = new RedisShardedMap<K, V>(realName, redisDB.getActorDirectoryClient(), config.getActorDirectoryHashBuckets());
-            }
-            else
-            {
-                targetMap = redisDB.getActorDirectoryClient().getMap(realName);
-            }
+            ConcurrentMap<?, ?>  targetMap = new RedisShardedMap<K, V>(realName, redisDB.getActorDirectoryClients(), config.getShardingBuckets());
             result = cacheManager.putIfAbsent(realName, targetMap);
             if (result == null)
             {
@@ -111,7 +102,7 @@ public class RedisClusterPeer implements ClusterPeer
 
         // Subscribe to Pub Sub
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisDB.getMessagingClient(nodeKey).getTopic(nodeKey).addListener((chan, msg) ->
+        redisDB.getShardedMessageClient(nodeKey).getTopic(nodeKey).addListener((chan, msg) ->
         {
             receiveMessage((RedisMsg) msg);
         });
@@ -126,18 +117,23 @@ public class RedisClusterPeer implements ClusterPeer
     private void writeMyEntry()
     {
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisDB.getNodeDirectoryClient().getBucket(nodeKey).set(localAddress.toString(), config.getNodeLifetimeSeconds(), TimeUnit.SECONDS);
+        redisDB.getShardedNodeDirectoryClient(nodeKey).getBucket(nodeKey).set(localAddress.toString(), config.getNodeLifetimeSeconds(), TimeUnit.SECONDS);
     }
 
     private void syncNodes()
     {
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, "*");
 
+        List<String> keys = new ArrayList<>();
+        List<RedissonClient> clients = redisDB.getNodeDirectoryClients();
+        for(RedissonClient client : clients) {
+            keys.addAll(client.getKeys().findKeysByPattern(nodeKey));
+        }
+
         List<NodeAddress> nodeAddresses = new ArrayList<>();
-        Collection<String> keys = redisDB.getNodeDirectoryClient().getKeys().findKeysByPattern(nodeKey);
         for (final String key : keys)
         {
-            final String rawKey = (String) redisDB.getNodeDirectoryClient().getBucket(key).get();
+            final String rawKey = (String) redisDB.getShardedNodeDirectoryClient(key).getBucket(key).get();
             nodeAddresses.add(new NodeAddressImpl(UUID.fromString(rawKey)));
         }
 
@@ -153,7 +149,7 @@ public class RedisClusterPeer implements ClusterPeer
                     redisMsg.setMessageContents(message);
                     redisMsg.setSenderAddress(localAddress.asUUID());
                     final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
-                    redisDB.getMessagingClient(targetNodeKey).getTopic(targetNodeKey).publishAsync(redisMsg)
+                    redisDB.getShardedMessageClient(targetNodeKey).getTopic(targetNodeKey).publishAsync(redisMsg)
                             .exceptionally((e) ->
                             {
                                 logger.error("Error sending message", e);
@@ -193,7 +189,7 @@ public class RedisClusterPeer implements ClusterPeer
     public void leave()
     {
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisDB.getNodeDirectoryClient().getBucket(nodeKey).delete();
+        redisDB.getShardedNodeDirectoryClient(nodeKey).getBucket(nodeKey).delete();
 
         redisDB.shutdownConnections();
     }
