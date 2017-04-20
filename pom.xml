@@ -43,13 +43,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Redis Cluster</name>
 
     <properties>
-        <orbit.version>0.9.14</orbit.version>
+        <orbit.version>0.9.18</orbit.version>
     </properties>
 
     <scm>
-        <url>https://github.com/orbit/orbit</url>
-        <connection>scm:git:git://github.com/orbit/orbit.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/orbit/orbit.git</developerConnection>
+        <url>https://github.com/orbit/orbit-redis-cluster</url>
+        <connection>scm:git:git://github.com/orbit/orbit-redis-cluster.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/orbit/orbit-redis-cluster.git</developerConnection>
     </scm>
 
     <dependencies>
@@ -69,7 +69,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
-            <version>3.3.0</version>
+            <version>3.3.2</version>
         </dependency>
 
         <dependency>

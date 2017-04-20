@@ -33,41 +33,45 @@ import org.redisson.client.handler.State;
 import org.redisson.client.protocol.Decoder;
 import org.redisson.client.protocol.Encoder;
 
+import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import net.jpountz.lz4.LZ4Compressor;
-import net.jpountz.lz4.LZ4Factory;
-import net.jpountz.lz4.LZ4SafeDecompressor;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
- * Created by joeh on 2017-01-27.
+ * Created by joeh on 2017-04-20.
  */
-public class RedisCompressionCodec implements Codec
+public class RedisPipelineCodec implements Codec
 {
-    private final LZ4Factory factory = LZ4Factory.fastestJavaInstance();
-
     private final Codec innerCodec;
+    private final List<RedisPipelineStep> pipelineSteps;
 
-    public RedisCompressionCodec(final Codec innerCodec) {
+    public RedisPipelineCodec(final List<RedisPipelineStep> pipelineSteps, final Codec innerCodec) {
         this.innerCodec = innerCodec;
+        this.pipelineSteps = pipelineSteps;
     }
 
     private final Decoder<Object> decoder = new Decoder<Object>() {
         @Override
-        public Object decode(ByteBuf buf, State state) throws IOException {
+        public Object decode(ByteBuf buf, State state) throws IOException
+        {
             final int rawLength = buf.readableBytes();
-            final int compressedLength = rawLength - 4;
-            final byte[] compressedBytes = new byte[compressedLength];
-            final Integer decompressedLength = buf.readInt();
-            buf.readBytes(compressedBytes);
+            final byte[] rawBytes = new byte[rawLength];
+            buf.readBytes(rawBytes);
 
-            final byte[] decompressedBytes = new byte[decompressedLength];
-            final LZ4SafeDecompressor decompressor = factory.safeDecompressor();
-            decompressor.decompress(compressedBytes, decompressedBytes);
-            final ByteBuf bf = Unpooled.wrappedBuffer(decompressedBytes);
+            final ListIterator li = pipelineSteps.listIterator(pipelineSteps.size());
+            
+            byte[] conversionBytes = rawBytes;
+
+            while (li.hasPrevious()) {
+                final RedisPipelineStep pipelineStep = (RedisPipelineStep) li.previous();
+                conversionBytes = pipelineStep.read(conversionBytes);
+            }
+
+            final ByteBuf bf = Unpooled.wrappedBuffer(conversionBytes);
 
             return innerCodec.getValueDecoder().decode(bf, state);
         }
@@ -76,15 +80,14 @@ public class RedisCompressionCodec implements Codec
     private final Encoder encoder = new Encoder() {
         @Override
         public byte[] encode(Object in) throws IOException {
-            final LZ4Compressor compressor = factory.highCompressor();
-            final byte[] uncompressedBytes = innerCodec.getValueEncoder().encode(in);
-            final byte[] compressedBytes = compressor.compress(uncompressedBytes);
-            final ByteBuffer buffer = ByteBuffer.allocate(compressedBytes.length + 4);
+            byte[] conversionBytes = innerCodec.getValueEncoder().encode(in);
 
-            buffer.putInt(uncompressedBytes.length);
-            buffer.put(compressedBytes);
+            for (final RedisPipelineStep pipelineStep : pipelineSteps)
+            {
+                conversionBytes = pipelineStep.write(conversionBytes);
+            }
 
-            return buffer.array();
+            return conversionBytes;
         }
     };
 

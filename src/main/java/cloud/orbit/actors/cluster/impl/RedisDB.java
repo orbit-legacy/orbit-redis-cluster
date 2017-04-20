@@ -156,16 +156,10 @@ public class RedisDB
             currentCodec = new JsonJacksonCodec();
         }
 
-        // Compression?
-        if(redisClusterConfig.getUseCompression()) {
-            currentCodec = new RedisCompressionCodec(currentCodec);
-        }
+        // Pipeline
+        currentCodec = new RedisPipelineCodec(redisClusterConfig.getPipelineSteps(), currentCodec);
 
-        // Encryption?
-        if(redisClusterConfig.getUseEncryption()) {
-            currentCodec = new RedisEncryptionCodec(redisClusterConfig.getEncryptionKey(), currentCodec);
-        }
-
+        // Configure codec
         redissonConfig.setCodec(currentCodec);
 
         // Clustered or not

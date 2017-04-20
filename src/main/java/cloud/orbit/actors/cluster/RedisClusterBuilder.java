@@ -28,6 +28,8 @@
 
 package cloud.orbit.actors.cluster;
 
+import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -155,24 +157,13 @@ public class RedisClusterBuilder
         return this;
     }
 
-    public RedisClusterBuilder enableCompression() {
-        redisClusterConfig.setUseCompression(true);
+    public RedisClusterBuilder pipelineSteps(List<RedisPipelineStep> pipelineSteps) {
+        redisClusterConfig.setPipelineSteps(pipelineSteps);
         return this;
     }
 
-    public RedisClusterBuilder disableCompression() {
-        redisClusterConfig.setUseCompression(false);
-        return this;
-    }
-
-    public RedisClusterBuilder enableEncryption(final String encryptionKey) {
-        redisClusterConfig.setUseEncryption(true);
-        redisClusterConfig.setEncryptionKey(encryptionKey);
-        return this;
-    }
-
-    public RedisClusterBuilder disableEncryption() {
-        redisClusterConfig.setUseEncryption(false);
+    public RedisClusterBuilder pipelineSteps(RedisPipelineStep... pipelineSteps) {
+        redisClusterConfig.setPipelineSteps(Arrays.asList(pipelineSteps));
         return this;
     }
 

@@ -28,6 +28,9 @@
 
 package cloud.orbit.actors.cluster;
 
+import cloud.orbit.actors.cluster.pipeline.RedisBasicPipeline;
+import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;
+
 import java.security.Key;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,9 +59,7 @@ public class RedisClusterConfig
     private Integer retryAttempts = 6;
     private Integer retryInterval = 10000;
     private Integer shardingBuckets = 256;
-    private Boolean useCompression = true;
-    private Boolean useEncryption = false;
-    private String encryptionKey = "";
+    private List<RedisPipelineStep> pipelineSteps = RedisBasicPipeline.defaultPipeline();
     private ExecutorService executorService = ForkJoinPool.commonPool();
 
 
@@ -143,36 +144,6 @@ public class RedisClusterConfig
         this.maxRedisConnections = maxRedisConnections;
     }
 
-
-    public Boolean getUseCompression()
-    {
-        return useCompression;
-    }
-
-    public void setUseCompression(final Boolean useCompression)
-    {
-        this.useCompression = useCompression;
-    }
-
-    public Boolean getUseEncryption()
-    {
-        return useEncryption;
-    }
-
-    public void setUseEncryption(final Boolean useEncryption)
-    {
-        this.useEncryption = useEncryption;
-    }
-
-    public String getEncryptionKey()
-    {
-        return encryptionKey;
-    }
-
-    public void setEncryptionKey(final String encryptionKey)
-    {
-        this.encryptionKey = encryptionKey;
-    }
 
     public ExecutorService getExecutorService()
     {
@@ -263,5 +234,15 @@ public class RedisClusterConfig
     public void setShardingBuckets(final Integer shardingBuckets)
     {
         this.shardingBuckets = shardingBuckets;
+    }
+
+    public List<RedisPipelineStep> getPipelineSteps()
+    {
+        return pipelineSteps;
+    }
+
+    public void setPipelineSteps(List<RedisPipelineStep> pipelineSteps)
+    {
+        this.pipelineSteps = Collections.unmodifiableList(pipelineSteps);
     }
 }
