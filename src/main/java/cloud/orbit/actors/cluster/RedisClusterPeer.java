@@ -102,7 +102,7 @@ public class RedisClusterPeer implements ClusterPeer
 
         // Subscribe to Pub Sub
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisDB.getShardedMessageClient(nodeKey).getTopic(nodeKey).addListener((chan, msg) ->
+        redisDB.subscribeToChannel(nodeKey, (chan, msg) ->
         {
             receiveMessage((RedisMsg) msg);
         });
@@ -149,12 +149,7 @@ public class RedisClusterPeer implements ClusterPeer
                     redisMsg.setMessageContents(message);
                     redisMsg.setSenderAddress(localAddress.asUUID());
                     final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
-                    redisDB.getShardedMessageClient(targetNodeKey).getTopic(targetNodeKey).publishAsync(redisMsg)
-                            .exceptionally((e) ->
-                            {
-                                logger.error("Error sending message", e);
-                                return 0L;
-                            });
+                    redisDB.sendMessageToChannel(targetNodeKey, redisMsg);
                 },
                 config.getExecutorService()
         );

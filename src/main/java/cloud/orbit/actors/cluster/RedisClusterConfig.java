@@ -50,13 +50,14 @@ public class RedisClusterConfig
     private List<String> messagingUris = Arrays.asList("redis://localhost");
     private Boolean messagingClustered = false;
     private Integer nodeLifetimeSeconds = 20;
-    private Integer maxRedisConnections = 10;
-    private Integer connectionTimeout = 3000;
-    private Integer generalTimeout = 3000;
-    private Integer idleTimeout = 3000;
-    private Integer reconnectionTimeout = 3000;
-    private Integer pingTimeout = 3000;
-    private Integer retryAttempts = 6;
+    private Integer minRedisConnections = 10;
+    private Integer maxRedisConnections = 64;
+    private Integer connectionTimeout = 10000;
+    private Integer generalTimeout = 20000;
+    private Integer idleTimeout = 10000;
+    private Integer reconnectionTimeout = 10000;
+    private Integer pingTimeout = 10000;
+    private Integer retryAttempts = Integer.MAX_VALUE;
     private Integer retryInterval = 10000;
     private Integer shardingBuckets = 256;
     private List<RedisPipelineStep> pipelineSteps = RedisBasicPipeline.defaultPipeline();
@@ -131,6 +132,16 @@ public class RedisClusterConfig
     public void setNodeLifetimeSeconds(final Integer nodeLifetimeSeconds)
     {
         this.nodeLifetimeSeconds = nodeLifetimeSeconds;
+    }
+
+    public Integer getMinRedisConnections()
+    {
+        return minRedisConnections;
+    }
+
+    public void setMinRedisConnections(Integer minRedisConnections)
+    {
+        this.minRedisConnections = minRedisConnections;
     }
 
 
@@ -245,4 +256,6 @@ public class RedisClusterConfig
     {
         this.pipelineSteps = Collections.unmodifiableList(pipelineSteps);
     }
+
+
 }

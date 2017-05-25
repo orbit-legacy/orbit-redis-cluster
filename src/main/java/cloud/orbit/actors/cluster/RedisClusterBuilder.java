@@ -112,6 +112,11 @@ public class RedisClusterBuilder
         return this;
     }
 
+    public RedisClusterBuilder minRedisConnections(final Integer minRedisConnections) {
+        redisClusterConfig.setMinRedisConnections(minRedisConnections);
+        return this;
+    }
+
     public RedisClusterBuilder maxRedisConnections(final Integer maxRedisConnections) {
         redisClusterConfig.setMaxRedisConnections(maxRedisConnections);
         return this;

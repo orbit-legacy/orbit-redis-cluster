@@ -30,6 +30,7 @@ package cloud.orbit.actors.cluster.impl;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
+import org.redisson.api.listener.MessageListener;
 import org.redisson.client.codec.Codec;
 import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.codec.SerializationCodec;
@@ -47,6 +48,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 /**
@@ -118,10 +120,33 @@ public class RedisDB
         return actorDirectoryClients.get(jumpConsistentHash);
     }
 
-    public RedissonClient getShardedMessageClient(final String shardId)
+    public void subscribeToChannel(final String channelId, final MessageListener<Object> statusListener)
     {
-        final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, messagingClients.size());
-        return messagingClients.get(jumpConsistentHash);
+        for (final RedissonClient messagingClient : messagingClients)
+        {
+            messagingClient.getTopic(channelId).addListener(statusListener);
+        }
+    }
+
+    public void sendMessageToChannel(final String channelId, final Object msg)
+    {
+            final List<RedissonClient> localMessagingClients = messagingClients;
+            final int activeClientCount = localMessagingClients.size();
+            if(activeClientCount > 0)
+            {
+                final int randomId = ThreadLocalRandom.current().nextInt(activeClientCount);
+                final RedissonClient client = localMessagingClients.get(randomId);
+
+                client.getTopic(channelId).publishAsync(msg).exceptionally((e) ->
+                {
+                    logger.error("Error sending message", e);
+                    return 0L;
+                });
+            }
+            else
+            {
+                throw new UncheckedException("No Redis messaging instances available.");
+            }
     }
 
     public void shutdownConnections() {
@@ -167,7 +192,10 @@ public class RedisDB
         {
             redissonConfig.useClusterServers()
                     .addNodeAddress(resolvedUri)
+                    .setMasterConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
                     .setMasterConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
+                    .setSlaveConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
+                    .setSlaveConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
                     .setConnectTimeout(redisClusterConfig.getConnectionTimeout())
                     .setTimeout(redisClusterConfig.getGeneralTimeout())
                     .setIdleConnectionTimeout(redisClusterConfig.getIdleTimeout())
@@ -181,6 +209,7 @@ public class RedisDB
         {
             redissonConfig.useSingleServer()
                     .setAddress(resolvedUri)
+                    .setConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
                     .setConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
                     .setConnectTimeout(redisClusterConfig.getConnectionTimeout())
                     .setTimeout(redisClusterConfig.getGeneralTimeout())

@@ -39,7 +39,7 @@ import java.nio.ByteBuffer;
  */
 public class RedisCompressionPipelineStep implements RedisPipelineStep
 {
-    private final LZ4Factory factory = LZ4Factory.fastestJavaInstance();
+    private final LZ4Factory factory = LZ4Factory.safeInstance();
 
     @Override
     public byte[] read(final byte[] buf)
