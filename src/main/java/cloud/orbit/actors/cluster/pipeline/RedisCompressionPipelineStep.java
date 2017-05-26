@@ -39,7 +39,7 @@ import java.nio.ByteBuffer;
  */
 public class RedisCompressionPipelineStep implements RedisPipelineStep
 {
-    private final LZ4Factory factory = LZ4Factory.safeInstance();
+    private final LZ4Factory factory = LZ4Factory.fastestJavaInstance();
 
     @Override
     public byte[] read(final byte[] buf)
@@ -71,7 +71,7 @@ public class RedisCompressionPipelineStep implements RedisPipelineStep
     @Override
     public byte[] write(final byte[] uncompressedBytes)
     {
-        final LZ4Compressor compressor = factory.highCompressor();
+        final LZ4Compressor compressor = factory.fastCompressor();
         final byte[] compressedBytes = compressor.compress(uncompressedBytes);
         final ByteBuffer buffer = ByteBuffer.allocate(compressedBytes.length + 4);
         buffer.putInt(uncompressedBytes.length);
