@@ -162,6 +162,26 @@ public class RedisClusterBuilder
         return this;
     }
 
+    public RedisClusterBuilder redissonThreads(final Integer redissonThreads) {
+        redisClusterConfig.setRedissonThreads(redissonThreads);
+        return this;
+    }
+
+    public RedisClusterBuilder nettyThreads(final Integer nettyThreads) {
+        redisClusterConfig.setNettyThreads(nettyThreads);
+        return this;
+    }
+
+    public RedisClusterBuilder shareEventLoop(final Boolean shareEventLoop) {
+        redisClusterConfig.setShareEventLoop(shareEventLoop);
+        return this;
+    }
+
+    public RedisClusterBuilder redissonExecutorService(final ExecutorService redissonExecutorService) {
+        redisClusterConfig.setRedissonExecutorService(redissonExecutorService);
+        return this;
+    }
+
     public RedisClusterBuilder pipelineSteps(List<RedisPipelineStep> pipelineSteps) {
         redisClusterConfig.setPipelineSteps(pipelineSteps);
         return this;
@@ -172,10 +192,11 @@ public class RedisClusterBuilder
         return this;
     }
 
-    public RedisClusterBuilder executorService(final ExecutorService executorService) {
-        redisClusterConfig.setExecutorService(executorService);
+    public RedisClusterBuilder coreExecutorService(final ExecutorService coreExecutorService) {
+        redisClusterConfig.setCoreExecutorService(coreExecutorService);
         return this;
     }
+
 
     public RedisClusterPeer build() {
         return new RedisClusterPeer(redisClusterConfig);

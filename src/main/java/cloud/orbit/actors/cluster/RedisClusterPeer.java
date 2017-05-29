@@ -151,7 +151,7 @@ public class RedisClusterPeer implements ClusterPeer
                     final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
                     redisDB.sendMessageToChannel(targetNodeKey, redisMsg);
                 },
-                config.getExecutorService()
+                config.getCoreExecutorService()
         );
 
     }
@@ -163,7 +163,7 @@ public class RedisClusterPeer implements ClusterPeer
                     final NodeAddress nodeAddr = new NodeAddressImpl(rawMessage.getSenderAddress());
                     messageListener.receive(nodeAddr, rawMessage.getMessageContents());
                 },
-                config.getExecutorService()
+                config.getCoreExecutorService()
         )
                 .exceptionally((e) ->
                 {
