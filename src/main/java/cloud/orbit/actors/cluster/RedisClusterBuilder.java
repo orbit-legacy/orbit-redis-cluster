@@ -162,6 +162,21 @@ public class RedisClusterBuilder
         return this;
     }
 
+    public RedisClusterBuilder redissonThreads(final Integer redissonThreads) {
+        redisClusterConfig.setRedissonThreads(redissonThreads);
+        return this;
+    }
+
+    public RedisClusterBuilder nettyThreads(final Integer nettyThreads) {
+        redisClusterConfig.setNettyThreads(nettyThreads);
+        return this;
+    }
+
+    public RedisClusterBuilder shareEventLoop(final Boolean shareEventLoop) {
+        redisClusterConfig.setShareEventLoop(shareEventLoop);
+        return this;
+    }
+
     public RedisClusterBuilder pipelineSteps(List<RedisPipelineStep> pipelineSteps) {
         redisClusterConfig.setPipelineSteps(pipelineSteps);
         return this;
@@ -176,6 +191,11 @@ public class RedisClusterBuilder
         redisClusterConfig.setExecutorService(executorService);
         return this;
     }
+
+
+
+    private Integer redissonThreads = Runtime.getRuntime().availableProcessors() * 2;
+    private Integer nettyThreads = Runtime.getRuntime().availableProcessors() * 2;
 
     public RedisClusterPeer build() {
         return new RedisClusterPeer(redisClusterConfig);

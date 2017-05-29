@@ -43,6 +43,8 @@ import com.github.ssedano.hash.JumpConsistentHash;
 
 import cloud.orbit.actors.cluster.RedisClusterConfig;
 import cloud.orbit.exception.UncheckedException;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -60,12 +62,19 @@ public class RedisDB
     private List<RedissonClient> nodeDirectoryClients = new ArrayList<>();
     private List<RedissonClient> actorDirectoryClients = new ArrayList<>();
     private List<RedissonClient> messagingClients = new ArrayList<>();
+    private EventLoopGroup eventLoopGroup = null;
     private static Logger logger = LoggerFactory.getLogger(RedisDB.class);
 
 
     public RedisDB(final RedisClusterConfig redisClusterConfig)
     {
         this.redisClusterConfig = redisClusterConfig;
+
+        // Create shared event loop group if required
+        if(redisClusterConfig.getShareEventLoop())
+        {
+            eventLoopGroup = new NioEventLoopGroup();
+        }
 
         final List<String> nodeDirectoryMasters = redisClusterConfig.getNodeDirectoryUris();
         for (final String uri : nodeDirectoryMasters)
@@ -186,6 +195,18 @@ public class RedisDB
 
         // Configure codec
         redissonConfig.setCodec(currentCodec);
+
+        // Event loop group
+        if(eventLoopGroup != null) {
+            redissonConfig.setEventLoopGroup(eventLoopGroup);
+        }
+
+        // Threading
+        redissonConfig.setThreads(redisClusterConfig.getRedissonThreads());
+        redissonConfig.setNettyThreads(redisClusterConfig.getNettyThreads());
+        if(redisClusterConfig.getExecutorService() != null) {
+            redissonConfig.setExecutor(redisClusterConfig.getExecutorService());
+        }
 
         // Clustered or not
         if (clustered)

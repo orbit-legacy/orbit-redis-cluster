@@ -30,13 +30,10 @@ package cloud.orbit.actors.cluster;
 
 import cloud.orbit.actors.cluster.pipeline.RedisBasicPipeline;
 import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;
-
-import java.security.Key;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 
 /**
  * Created by jhegarty on 2017-01-19.
@@ -60,8 +57,11 @@ public class RedisClusterConfig
     private Integer retryAttempts = Integer.MAX_VALUE;
     private Integer retryInterval = 10000;
     private Integer shardingBuckets = 256;
+    private Integer redissonThreads = Runtime.getRuntime().availableProcessors() * 2;
+    private Integer nettyThreads = Runtime.getRuntime().availableProcessors() * 2;
+    private Boolean shareEventLoop = false;
     private List<RedisPipelineStep> pipelineSteps = RedisBasicPipeline.defaultPipeline();
-    private ExecutorService executorService = ForkJoinPool.commonPool();
+    private ExecutorService executorService = null;
 
 
     public List<String> getActorDirectoryUris()
@@ -258,4 +258,33 @@ public class RedisClusterConfig
     }
 
 
+    public Integer getRedissonThreads()
+    {
+        return redissonThreads;
+    }
+
+    public void setRedissonThreads(Integer redissonThreads)
+    {
+        this.redissonThreads = redissonThreads;
+    }
+
+    public Integer getNettyThreads()
+    {
+        return nettyThreads;
+    }
+
+    public void setNettyThreads(Integer nettyThreads)
+    {
+        this.nettyThreads = nettyThreads;
+    }
+
+    public Boolean getShareEventLoop()
+    {
+        return shareEventLoop;
+    }
+
+    public void setShareEventLoop(Boolean shareEventLoop)
+    {
+        this.shareEventLoop = shareEventLoop;
+    }
 }
