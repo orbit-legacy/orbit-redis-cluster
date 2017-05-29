@@ -204,8 +204,8 @@ public class RedisDB
         // Threading
         redissonConfig.setThreads(redisClusterConfig.getRedissonThreads());
         redissonConfig.setNettyThreads(redisClusterConfig.getNettyThreads());
-        if(redisClusterConfig.getExecutorService() != null) {
-            redissonConfig.setExecutor(redisClusterConfig.getExecutorService());
+        if(redisClusterConfig.getRedissonExecutorService() != null) {
+            redissonConfig.setExecutor(redisClusterConfig.getRedissonExecutorService());
         }
 
         // Clustered or not

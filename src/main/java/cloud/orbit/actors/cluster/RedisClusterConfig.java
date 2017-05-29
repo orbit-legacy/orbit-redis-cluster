@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Created by jhegarty on 2017-01-19.
@@ -59,9 +60,10 @@ public class RedisClusterConfig
     private Integer shardingBuckets = 256;
     private Integer redissonThreads = Runtime.getRuntime().availableProcessors() * 2;
     private Integer nettyThreads = Runtime.getRuntime().availableProcessors() * 2;
+    private ExecutorService redissonExecutorService = null;
     private Boolean shareEventLoop = false;
     private List<RedisPipelineStep> pipelineSteps = RedisBasicPipeline.defaultPipeline();
-    private ExecutorService executorService = null;
+    private ExecutorService coreExecutorService = ForkJoinPool.commonPool();
 
 
     public List<String> getActorDirectoryUris()
@@ -156,14 +158,14 @@ public class RedisClusterConfig
     }
 
 
-    public ExecutorService getExecutorService()
+    public ExecutorService getCoreExecutorService()
     {
-        return executorService;
+        return coreExecutorService;
     }
 
-    public void setExecutorService(final ExecutorService executorService)
+    public void setCoreExecutorService(final ExecutorService coreExecutorService)
     {
-        this.executorService = executorService;
+        this.coreExecutorService = coreExecutorService;
     }
 
 
@@ -286,5 +288,15 @@ public class RedisClusterConfig
     public void setShareEventLoop(Boolean shareEventLoop)
     {
         this.shareEventLoop = shareEventLoop;
+    }
+
+    public ExecutorService getRedissonExecutorService()
+    {
+        return redissonExecutorService;
+    }
+
+    public void setRedissonExecutorService(ExecutorService redissonExecutorService)
+    {
+        this.redissonExecutorService = redissonExecutorService;
     }
 }
