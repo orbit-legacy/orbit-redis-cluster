@@ -191,11 +191,7 @@ public class RedisClusterBuilder
         redisClusterConfig.setExecutorService(executorService);
         return this;
     }
-
-
-
-    private Integer redissonThreads = Runtime.getRuntime().availableProcessors() * 2;
-    private Integer nettyThreads = Runtime.getRuntime().availableProcessors() * 2;
+    
 
     public RedisClusterPeer build() {
         return new RedisClusterPeer(redisClusterConfig);
