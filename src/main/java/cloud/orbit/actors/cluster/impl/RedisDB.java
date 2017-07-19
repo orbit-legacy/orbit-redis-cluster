@@ -176,7 +176,7 @@ public class RedisDB
         if (host == null) host = "localhost";
         Integer port = realUri.getPort();
         if (port == -1) port = 6379;
-        final String resolvedUri = host + ":" + port;
+        final String resolvedUri = "redis://" + host + ":" + port;
 
         final Config redissonConfig = new Config();
 
