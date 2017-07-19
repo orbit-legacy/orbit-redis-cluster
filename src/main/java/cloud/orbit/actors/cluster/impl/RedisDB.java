@@ -80,7 +80,7 @@ public class RedisDB
         for (final String uri : nodeDirectoryMasters)
         {
             logger.info("Connecting to Redis Node Directory node at '{}'...", uri);
-            nodeDirectoryClients.add(createClient(uri, redisClusterConfig.getNodeDirectoryClustered(), true));
+            nodeDirectoryClients.add(createClient(uri, true));
 
         }
 
@@ -88,7 +88,7 @@ public class RedisDB
         for (final String uri : actorDirectoryMasters)
         {
             logger.info("Connecting to Redis Actor Directory node at '{}'...", uri);
-            actorDirectoryClients.add(createClient(uri, redisClusterConfig.getActorDirectoryClustered(), true));
+            actorDirectoryClients.add(createClient(uri, true));
 
         }
 
@@ -97,7 +97,7 @@ public class RedisDB
         for (final String uri : messagingMasters)
         {
             logger.info("Connecting to Redis messaging node at '{}'...", uri);
-            messagingClients.add(createClient(uri, redisClusterConfig.getMessagingClustered(), false));
+            messagingClients.add(createClient(uri, false));
 
         }
     }
@@ -164,7 +164,7 @@ public class RedisDB
         messagingClients.forEach(RedissonClient::shutdown);
     }
 
-    private RedissonClient createClient(final String uri, final Boolean clustered, final Boolean useJavaSerializer)
+    private RedissonClient createClient(final String uri, final Boolean useJavaSerializer)
     {
         // Resolve URI
         final URI realUri = URI.create(uri);
@@ -208,27 +208,8 @@ public class RedisDB
             redissonConfig.setExecutor(redisClusterConfig.getRedissonExecutorService());
         }
 
-        // Clustered or not
-        if (clustered)
-        {
-            redissonConfig.useClusterServers()
-                    .addNodeAddress(resolvedUri)
-                    .setMasterConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
-                    .setMasterConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
-                    .setSlaveConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
-                    .setSlaveConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
-                    .setConnectTimeout(redisClusterConfig.getConnectionTimeout())
-                    .setTimeout(redisClusterConfig.getGeneralTimeout())
-                    .setIdleConnectionTimeout(redisClusterConfig.getIdleTimeout())
-                    .setReconnectionTimeout(redisClusterConfig.getReconnectionTimeout())
-                    .setPingTimeout(redisClusterConfig.getPingTimeout())
-                    .setRetryAttempts(redisClusterConfig.getRetryAttempts())
-                    .setRetryInterval(redisClusterConfig.getRetryInterval())
-                    .setReadMode(ReadMode.MASTER);
-        }
-        else
-        {
             redissonConfig.useSingleServer()
+                    .setDnsMonitoring(true)
                     .setAddress(resolvedUri)
                     .setConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
                     .setConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
@@ -239,7 +220,7 @@ public class RedisDB
                     .setPingTimeout(redisClusterConfig.getPingTimeout())
                     .setRetryAttempts(redisClusterConfig.getRetryAttempts())
                     .setRetryInterval(redisClusterConfig.getRetryInterval());
-        }
+
 
         return Redisson.create(redissonConfig);
     }

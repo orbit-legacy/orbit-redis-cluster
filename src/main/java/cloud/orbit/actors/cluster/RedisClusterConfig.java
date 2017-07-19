@@ -42,11 +42,8 @@ import java.util.concurrent.ForkJoinPool;
 public class RedisClusterConfig
 {
     private List<String> actorDirectoryUris = Arrays.asList("redis://localhost");
-    private Boolean actorDirectoryClustered = false;
     private List<String> nodeDirectoryUris = Arrays.asList("redis://localhost");
-    private Boolean nodeDirectoryClustered = false;
     private List<String> messagingUris = Arrays.asList("redis://localhost");
-    private Boolean messagingClustered = false;
     private Integer nodeLifetimeSeconds = 20;
     private Integer minRedisConnections = 10;
     private Integer maxRedisConnections = 64;
@@ -57,6 +54,8 @@ public class RedisClusterConfig
     private Integer pingTimeout = 10000;
     private Integer retryAttempts = Integer.MAX_VALUE;
     private Integer retryInterval = 10000;
+    private Boolean dnsMonitoring = true;
+    private Integer dnsMonitoringInverval = 10000;
     private Integer shardingBuckets = 256;
     private Integer redissonThreads = Runtime.getRuntime().availableProcessors() * 2;
     private Integer nettyThreads = Runtime.getRuntime().availableProcessors() * 2;
@@ -94,36 +93,6 @@ public class RedisClusterConfig
     public void setMessagingUris(final List<String> messagingUris)
     {
         this.messagingUris = Collections.unmodifiableList(messagingUris);
-    }
-
-    public Boolean getMessagingClustered()
-    {
-        return messagingClustered;
-    }
-
-    public void setMessagingClustered(final Boolean messagingClustered)
-    {
-        this.messagingClustered = messagingClustered;
-    }
-
-    public Boolean getActorDirectoryClustered()
-    {
-        return actorDirectoryClustered;
-    }
-
-    public void setActorDirectoryClustered(final Boolean actorDirectoryClustered)
-    {
-        this.actorDirectoryClustered = actorDirectoryClustered;
-    }
-
-    public Boolean getNodeDirectoryClustered()
-    {
-        return nodeDirectoryClustered;
-    }
-
-    public void setNodeDirectoryClustered(final Boolean nodeDirectoryClustered)
-    {
-        this.nodeDirectoryClustered = nodeDirectoryClustered;
     }
 
     public Integer getNodeLifetimeSeconds()
@@ -298,5 +267,25 @@ public class RedisClusterConfig
     public void setRedissonExecutorService(ExecutorService redissonExecutorService)
     {
         this.redissonExecutorService = redissonExecutorService;
+    }
+
+    public Boolean getDnsMonitoring()
+    {
+        return dnsMonitoring;
+    }
+
+    public void setDnsMonitoring(Boolean dnsMonitoring)
+    {
+        this.dnsMonitoring = dnsMonitoring;
+    }
+
+    public Integer getDnsMonitoringInverval()
+    {
+        return dnsMonitoringInverval;
+    }
+
+    public void setDnsMonitoringInverval(Integer dnsMonitoringInverval)
+    {
+        this.dnsMonitoringInverval = dnsMonitoringInverval;
     }
 }

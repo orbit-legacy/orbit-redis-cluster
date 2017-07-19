@@ -45,64 +45,36 @@ public class RedisClusterBuilder
         redisClusterConfig = new RedisClusterConfig();
     }
 
-    public RedisClusterBuilder nodeDirectoryUri(final String nodeDirectoryUri) {
-        return this.nodeDirectoryUri(nodeDirectoryUri, false);
-    }
 
-    public RedisClusterBuilder nodeDirectoryUri(final String nodeDirectoryUri, final Boolean redisClustering) {
+    public RedisClusterBuilder nodeDirectoryUri(final String nodeDirectoryUri) {
         redisClusterConfig.setNodeDirectoryUris(Arrays.asList(nodeDirectoryUri));
-        redisClusterConfig.setNodeDirectoryClustered(redisClustering);
         return this;
     }
 
     public RedisClusterBuilder nodeDirectoryUris(final List<String> nodeDirectoryUris) {
-        return this.nodeDirectoryUris(nodeDirectoryUris, false);
-    }
-
-    public RedisClusterBuilder nodeDirectoryUris(final List<String> nodeDirectoryUris, final Boolean redisClustering) {
         redisClusterConfig.setNodeDirectoryUris(nodeDirectoryUris);
-        redisClusterConfig.setNodeDirectoryClustered(redisClustering);
         return this;
     }
 
     public RedisClusterBuilder actorDirectoryUri(final String actorDirectoryUri) {
-        return this.actorDirectoryUri(actorDirectoryUri, false);
-    }
-
-    public RedisClusterBuilder actorDirectoryUri(final String actorDirectoryUri, final Boolean redisClustering) {
         redisClusterConfig.setActorDirectoryUris(Arrays.asList(actorDirectoryUri));
-        redisClusterConfig.setActorDirectoryClustered(redisClustering);
+
         return this;
     }
 
     public RedisClusterBuilder actorDirectoryUris(final List<String> actorDirectoryUris) {
-        return this.actorDirectoryUris(actorDirectoryUris, false);
-    }
-
-    public RedisClusterBuilder actorDirectoryUris(final List<String> actorDirectoryUris, final Boolean redisClustering) {
         redisClusterConfig.setActorDirectoryUris(actorDirectoryUris);
-        redisClusterConfig.setActorDirectoryClustered(redisClustering);
         return this;
     }
 
     public RedisClusterBuilder messagingUri(final String messagingUri) {
-        return this.messagingUri(messagingUri, false);
-    }
-
-    public RedisClusterBuilder messagingUri(final String messagingUri, final Boolean redisClustering) {
         redisClusterConfig.setMessagingUris(Arrays.asList(messagingUri));
-        redisClusterConfig.setMessagingClustered(redisClustering);
         return this;
     }
 
 
     public RedisClusterBuilder messagingUris(final List<String> messagingUris) {
-        return this.messagingUris(messagingUris, false);
-    }
-
-    public RedisClusterBuilder messagingUris(final List<String> messagingUris, final Boolean redisClustering) {
         redisClusterConfig.setMessagingUris(messagingUris);
-        redisClusterConfig.setMessagingClustered(redisClustering);
         return this;
     }
 
@@ -154,6 +126,16 @@ public class RedisClusterBuilder
 
     public RedisClusterBuilder retryInterval(final Integer retryInterval) {
         redisClusterConfig.setRetryInterval(retryInterval);
+        return this;
+    }
+
+    public RedisClusterBuilder dnsMonitoring(final Boolean dnsMonitoring) {
+        redisClusterConfig.setDnsMonitoring(dnsMonitoring);
+        return this;
+    }
+
+    public RedisClusterBuilder dnsMonitoringInterval(final Integer dnsMonitoringInterval) {
+        redisClusterConfig.setDnsMonitoringInverval(dnsMonitoringInterval);
         return this;
     }
 
