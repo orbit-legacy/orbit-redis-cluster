@@ -54,6 +54,7 @@ public class RedisClusterConfig
     private Integer pingTimeout = 10000;
     private Integer retryAttempts = Integer.MAX_VALUE;
     private Integer retryInterval = 10000;
+    private Integer failedAttempts = 100;
     private Boolean dnsMonitoring = true;
     private Integer dnsMonitoringInverval = 10000;
     private Integer shardingBuckets = 256;
@@ -287,5 +288,15 @@ public class RedisClusterConfig
     public void setDnsMonitoringInverval(Integer dnsMonitoringInverval)
     {
         this.dnsMonitoringInverval = dnsMonitoringInverval;
+    }
+
+    public Integer getFailedAttempts()
+    {
+        return failedAttempts;
+    }
+
+    public void setFailedAttempts(Integer failedAttempts)
+    {
+        this.failedAttempts = failedAttempts;
     }
 }
