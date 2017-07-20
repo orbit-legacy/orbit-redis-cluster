@@ -210,6 +210,7 @@ public class RedisDB
 
             redissonConfig.useSingleServer()
                     .setDnsMonitoring(true)
+                    .setDnsMonitoringInterval(redisClusterConfig.getDnsMonitoringInverval())
                     .setAddress(resolvedUri)
                     .setConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
                     .setConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
@@ -218,6 +219,7 @@ public class RedisDB
                     .setIdleConnectionTimeout(redisClusterConfig.getIdleTimeout())
                     .setReconnectionTimeout(redisClusterConfig.getReconnectionTimeout())
                     .setPingTimeout(redisClusterConfig.getPingTimeout())
+                    .setFailedAttempts(redisClusterConfig.getFailedAttempts())
                     .setRetryAttempts(redisClusterConfig.getRetryAttempts())
                     .setRetryInterval(redisClusterConfig.getRetryInterval());
 

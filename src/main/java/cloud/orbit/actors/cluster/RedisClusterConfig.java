@@ -54,7 +54,7 @@ public class RedisClusterConfig
     private Integer pingTimeout = 10000;
     private Integer retryAttempts = Integer.MAX_VALUE;
     private Integer retryInterval = 10000;
-    private Integer failedAttempts = 100;
+    private Integer failedAttempts = Integer.MAX_VALUE;
     private Boolean dnsMonitoring = true;
     private Integer dnsMonitoringInverval = 10000;
     private Integer shardingBuckets = 256;
