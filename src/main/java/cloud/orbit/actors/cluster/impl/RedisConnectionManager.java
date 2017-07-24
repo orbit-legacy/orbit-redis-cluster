@@ -35,7 +35,6 @@ import org.redisson.client.codec.Codec;
 import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.codec.SerializationCodec;
 import org.redisson.config.Config;
-import org.redisson.config.ReadMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,22 +50,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 
 /**
  * Created by joeh@ea.com on 2016-12-13.
  */
-public class RedisDB
+public class RedisConnectionManager
 {
     private RedisClusterConfig redisClusterConfig = null;
-    private List<RedissonClient> nodeDirectoryClients = new ArrayList<>();
-    private List<RedissonClient> actorDirectoryClients = new ArrayList<>();
-    private List<RedissonClient> messagingClients = new ArrayList<>();
+    private List<RedisOrbitClient> nodeDirectoryClients = new ArrayList<>();
+    private List<RedisOrbitClient> actorDirectoryClients = new ArrayList<>();
+    private List<RedisOrbitClient> messagingClients = new ArrayList<>();
     private EventLoopGroup eventLoopGroup = null;
-    private static Logger logger = LoggerFactory.getLogger(RedisDB.class);
+    private static Logger logger = LoggerFactory.getLogger(RedisConnectionManager.class);
 
 
-    public RedisDB(final RedisClusterConfig redisClusterConfig)
+    public RedisConnectionManager(final RedisClusterConfig redisClusterConfig)
     {
         this.redisClusterConfig = redisClusterConfig;
 
@@ -102,28 +102,28 @@ public class RedisDB
         }
     }
 
-    public List<RedissonClient> getNodeDirectoryClients()
+    public List<RedisOrbitClient> getNodeDirectoryClients()
     {
         return Collections.unmodifiableList(nodeDirectoryClients);
     }
 
-    public List<RedissonClient> getActorDirectoryClients()
+    public List<RedisOrbitClient> getActorDirectoryClients()
     {
         return Collections.unmodifiableList(actorDirectoryClients);
     }
 
-    public List<RedissonClient> getMessagingClients()
+    public List<RedisOrbitClient> getMessagingClients()
     {
         return Collections.unmodifiableList(messagingClients);
     }
 
-    public RedissonClient getShardedNodeDirectoryClient(final String shardId)
+    public RedisOrbitClient getShardedNodeDirectoryClient(final String shardId)
     {
         final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, nodeDirectoryClients.size());
         return nodeDirectoryClients.get(jumpConsistentHash);
     }
 
-    public RedissonClient getShardedActorDirectoryClient(final String shardId)
+    public RedisOrbitClient getShardedActorDirectoryClient(final String shardId)
     {
         final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, actorDirectoryClients.size());
         return actorDirectoryClients.get(jumpConsistentHash);
@@ -131,20 +131,20 @@ public class RedisDB
 
     public void subscribeToChannel(final String channelId, final MessageListener<Object> statusListener)
     {
-        for (final RedissonClient messagingClient : messagingClients)
+        for (final RedisOrbitClient messagingClient : messagingClients)
         {
-            messagingClient.getTopic(channelId).addListener(statusListener);
+            messagingClient.getRedissonClient().getTopic(channelId).addListener(statusListener);
         }
     }
 
     public void sendMessageToChannel(final String channelId, final Object msg)
     {
-            final List<RedissonClient> localMessagingClients = messagingClients;
+            final List<RedisOrbitClient> localMessagingClients = messagingClients.stream().filter((e) -> e.isConnectied()).collect(Collectors.toList());
             final int activeClientCount = localMessagingClients.size();
             if(activeClientCount > 0)
             {
                 final int randomId = ThreadLocalRandom.current().nextInt(activeClientCount);
-                final RedissonClient client = localMessagingClients.get(randomId);
+                final RedissonClient client = localMessagingClients.get(randomId).getRedissonClient();
 
                 client.getTopic(channelId).publishAsync(msg).exceptionally((e) ->
                 {
@@ -159,12 +159,12 @@ public class RedisDB
     }
 
     public void shutdownConnections() {
-        nodeDirectoryClients.forEach(RedissonClient::shutdown);
-        actorDirectoryClients.forEach(RedissonClient::shutdown);
-        messagingClients.forEach(RedissonClient::shutdown);
+        nodeDirectoryClients.forEach(RedisOrbitClient::shutdown);
+        actorDirectoryClients.forEach(RedisOrbitClient::shutdown);
+        messagingClients.forEach(RedisOrbitClient::shutdown);
     }
 
-    private RedissonClient createClient(final String uri, final Boolean useJavaSerializer)
+    private RedisOrbitClient createClient(final String uri, final Boolean useJavaSerializer)
     {
         // Resolve URI
         final URI realUri = URI.create(uri);
@@ -224,6 +224,6 @@ public class RedisDB
                     .setRetryInterval(redisClusterConfig.getRetryInterval());
 
 
-        return Redisson.create(redissonConfig);
+        return new RedisOrbitClient(Redisson.create(redissonConfig));
     }
 }
