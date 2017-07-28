@@ -47,8 +47,8 @@ public class RedisClusterConfig
     private Integer nodeLifetimeSeconds = 20;
     private Integer minRedisConnections = 10;
     private Integer maxRedisConnections = 64;
-    private Integer connectionTimeout = 1000;
-    private Integer generalTimeout = 2000;
+    private Integer connectionTimeout = 5000;
+    private Integer generalTimeout = 3000;
     private Integer idleTimeout = 10000;
     private Integer reconnectionTimeout = 1000;
     private Integer pingTimeout = 1000;
@@ -57,6 +57,7 @@ public class RedisClusterConfig
     private Integer failedAttempts = Integer.MAX_VALUE;
     private Boolean dnsMonitoring = true;
     private Integer dnsMonitoringInverval = 10000;
+    private Integer messagingHealthcheckInterval = 10000;
     private Integer shardingBuckets = 256;
     private Integer redissonThreads = Runtime.getRuntime().availableProcessors() * 2;
     private Integer nettyThreads = Runtime.getRuntime().availableProcessors() * 2;
@@ -298,5 +299,15 @@ public class RedisClusterConfig
     public void setFailedAttempts(Integer failedAttempts)
     {
         this.failedAttempts = failedAttempts;
+    }
+
+    public Integer getMessagingHealthcheckInterval()
+    {
+        return messagingHealthcheckInterval;
+    }
+
+    public void setMessagingHealthcheckInterval(Integer messagingHealthcheckInterval)
+    {
+        this.messagingHealthcheckInterval = messagingHealthcheckInterval;
     }
 }

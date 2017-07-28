@@ -133,7 +133,7 @@ public class RedisConnectionManager
     {
         for (final RedisOrbitClient messagingClient : messagingClients)
         {
-            messagingClient.getRedissonClient().getTopic(channelId).addListener(statusListener);
+            messagingClient.subscribe(channelId, statusListener);
         }
     }
 
@@ -224,6 +224,6 @@ public class RedisConnectionManager
                     .setRetryInterval(redisClusterConfig.getRetryInterval());
 
 
-        return new RedisOrbitClient(Redisson.create(redissonConfig));
+        return new RedisOrbitClient(Redisson.create(redissonConfig), redisClusterConfig.getMessagingHealthcheckInterval());
     }
 }

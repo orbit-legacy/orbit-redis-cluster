@@ -143,16 +143,11 @@ public class RedisClusterPeer implements ClusterPeer
     @Override
     public void sendMessage(final NodeAddress toAddress, final byte[] message)
     {
-        Task.runAsync(() ->
-                {
-                    final RedisMsg redisMsg = new RedisMsg();
-                    redisMsg.setMessageContents(message);
-                    redisMsg.setSenderAddress(localAddress.asUUID());
-                    final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
-                    redisConnectionManager.sendMessageToChannel(targetNodeKey, redisMsg);
-                },
-                config.getCoreExecutorService()
-        );
+        final RedisMsg redisMsg = new RedisMsg();
+        redisMsg.setMessageContents(message);
+        redisMsg.setSenderAddress(localAddress.asUUID());
+        final String targetNodeKey = RedisKeyGenerator.nodeKey(clusterName, toAddress.toString());
+        redisConnectionManager.sendMessageToChannel(targetNodeKey, redisMsg);
 
     }
 

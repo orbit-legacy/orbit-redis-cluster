@@ -144,6 +144,11 @@ public class RedisClusterBuilder
         return this;
     }
 
+    public RedisClusterBuilder messagingHealthcheckInterval(final Integer messagingHealthcheckInterval) {
+        redisClusterConfig.setMessagingHealthcheckInterval(messagingHealthcheckInterval);
+        return this;
+    }
+
     public RedisClusterBuilder shardingBuckets(final Integer shardingBuckets) {
         redisClusterConfig.setShardingBuckets(shardingBuckets);
         return this;
