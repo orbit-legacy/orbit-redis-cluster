@@ -6,8 +6,6 @@ Orbit Redis Cluster Implementation
 [![Build Status](https://img.shields.io/travis/orbit/orbit-redis-cluster.svg)](https://travis-ci.org/orbit/orbit-redis-cluster)
 [![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/orbit/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-_Warning: This is a very crude first pass prototype and is not intended for use. There are many optimizations still to be performed._
-
 Example Usage
 =============
 
@@ -15,8 +13,8 @@ URI Format: `redis://host:port`
 
 ```java
 final RedisClusterPeer clusterPeer = new RedisClusterBuilder()
-    .actorDirectoryUri(actorDirUri, actorDirClustered)
-    .nodeDirectoryUri(nodeDirUri, nodeDirClustered)
+    .actorDirectoryUri(actorDirUri)
+    .nodeDirectoryUri(nodeDirUri)
     .messagingUris(Arrays.asList(
                     messagingUri1,
                     messagingUri2
