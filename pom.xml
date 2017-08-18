@@ -39,7 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <groupId>cloud.orbit</groupId>
     <artifactId>orbit-redis-cluster</artifactId>
-    <version>1.2.6</version>
+    <version>1.2.7-SNAPSHOT</version>
     <name>Orbit Redis Cluster</name>
 
     <properties>
