@@ -53,6 +53,16 @@ public class RedisOrbitClient
         this.messagingHealthcheckInterval = messagingHealthcheckInterval;
         this.redisClient = redisClient;
         this.isConnected = redisClient.getNodesGroup().pingAll();
+        this.connectionTimer = new Timer();
+        this.connectionTimer.scheduleAtFixedRate(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                connectionTask();
+            }
+        }, 0, messagingHealthcheckInterval);
+
         connectionTask();
     }
 
@@ -93,16 +103,6 @@ public class RedisOrbitClient
 
             isConnected = subscribedAll;
         }
-
-        connectionTimer = new Timer();
-        connectionTimer.schedule(new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                connectionTask();
-            }
-        }, messagingHealthcheckInterval);
     }
 
     public boolean isConnectied () {
@@ -114,6 +114,7 @@ public class RedisOrbitClient
     }
 
     public void shutdown() {
+        this.connectionTimer.cancel();
         this.redisClient.shutdown();
     }
 }
