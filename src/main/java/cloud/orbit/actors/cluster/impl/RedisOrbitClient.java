@@ -110,7 +110,7 @@ public class RedisOrbitClient
                     }
                     catch (Exception e)
                     {
-                        logger.warn("Could not resubscribe, this may be transient", e);
+                        logger.warn("Could not resubscribe to '{}', this may be transient.\n{}", subscription.getLeft(), e);
                         subscribedAll = false;
                         break;
                     }
