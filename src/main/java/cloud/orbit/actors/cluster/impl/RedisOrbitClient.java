@@ -33,7 +33,6 @@ import org.redisson.api.listener.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cloud.orbit.actors.cluster.RedisClusterPeer;
 import cloud.orbit.tuples.Pair;
 
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ import java.util.stream.Collectors;
 
 public class RedisOrbitClient
 {
-    private static Logger logger = LoggerFactory.getLogger(RedisClusterPeer.class);
+    private static Logger logger = LoggerFactory.getLogger(RedisOrbitClient.class);
 
     private final RedissonClient redisClient;
     private volatile boolean isConnected = false;
