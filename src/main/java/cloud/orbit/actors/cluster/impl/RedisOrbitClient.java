@@ -30,30 +30,33 @@ package cloud.orbit.actors.cluster.impl;
 
 import org.redisson.api.RedissonClient;
 import org.redisson.api.listener.MessageListener;
-import org.redisson.connection.ConnectionListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import cloud.orbit.actors.cluster.RedisClusterPeer;
 import cloud.orbit.tuples.Pair;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 public class RedisOrbitClient
 {
+    private static Logger logger = LoggerFactory.getLogger(RedisClusterPeer.class);
+
     private final RedissonClient redisClient;
-    private final Integer messagingHealthcheckInterval;
-    private boolean isConnected = false;
+    private volatile boolean isConnected = false;
     private final List<Pair<String, MessageListener<Object>>> subscriptions = new ArrayList<>();
-    private Timer connectionTimer;
+    private final Timer connectionTimer;
 
     public RedisOrbitClient(final RedissonClient redisClient, final Integer messagingHealthcheckInterval)
     {
-        this.messagingHealthcheckInterval = messagingHealthcheckInterval;
         this.redisClient = redisClient;
         this.isConnected = redisClient.getNodesGroup().pingAll();
         this.connectionTimer = new Timer();
+
         this.connectionTimer.scheduleAtFixedRate(new TimerTask()
         {
             @Override
@@ -68,40 +71,63 @@ public class RedisOrbitClient
 
     public void subscribe(final String channelId, final MessageListener<Object> messageListener)
     {
+
         subscriptions.add(Pair.of(channelId, messageListener));
         if(isConnected)
         {
             redisClient.getTopic(channelId).addListener(messageListener);
         }
+
     }
 
     private void connectionTask()
     {
-        final boolean nowConnected = redisClient.getNodesGroup().pingAll();
-
-        if(!nowConnected)
+        try
         {
-            isConnected = false;
-        }
+            boolean nowConnected = false;
 
-        if(nowConnected && !isConnected)
-        {
-            boolean subscribedAll = true;
-            for(Pair<String, MessageListener<Object>> subscription : subscriptions)
+            try
             {
-                try
-                {
-                    redisClient.getTopic(subscription.getLeft()).removeAllListeners();
-                    redisClient.getTopic(subscription.getLeft()).addListener(subscription.getRight());
-
-                } catch(Exception e)
-                {
-                    subscribedAll = false;
-                    break;
-                }
+                nowConnected = redisClient.getNodesGroup().pingAll();
+            }
+            catch (Throwable e)
+            {
+                logger.error("Unexpected error during redis ping", e);
             }
 
-            isConnected = subscribedAll;
+            if (!nowConnected)
+            {
+                isConnected = false;
+                logger.error("Redis is not connected: {}", redisClient.getNodesGroup().getNodes().stream()
+                        .map((x) -> x.getAddr().toString()).collect(Collectors.joining(",")));
+            }
+
+            if (nowConnected && !isConnected)
+            {
+                boolean subscribedAll = true;
+                for (Pair<String, MessageListener<Object>> subscription : subscriptions)
+                {
+                    try
+                    {
+                        redisClient.getTopic(subscription.getLeft()).removeAllListeners();
+                        redisClient.getTopic(subscription.getLeft()).addListener(subscription.getRight());
+
+                    }
+                    catch (Exception e)
+                    {
+                        logger.warn("Could not resubscribe, this may be transient", e);
+                        subscribedAll = false;
+                        break;
+                    }
+                }
+
+                isConnected = subscribedAll;
+            }
+        }
+        catch(Throwable e)
+        {
+            logger.error("Unexpected connection task error", e);
+
         }
     }
 
