@@ -55,7 +55,6 @@ public class RedisOrbitClient
         this.redisClient = redisClient;
         this.isConnected = redisClient.getNodesGroup().pingAll();
         this.connectionTimer = new Timer();
-
         this.connectionTimer.scheduleAtFixedRate(new TimerTask()
         {
             @Override
@@ -70,13 +69,11 @@ public class RedisOrbitClient
 
     public void subscribe(final String channelId, final MessageListener<Object> messageListener)
     {
-
         subscriptions.add(Pair.of(channelId, messageListener));
         if(isConnected)
         {
             redisClient.getTopic(channelId).addListener(messageListener);
         }
-
     }
 
     private void connectionTask()
@@ -110,7 +107,6 @@ public class RedisOrbitClient
                     {
                         redisClient.getTopic(subscription.getLeft()).removeAllListeners();
                         redisClient.getTopic(subscription.getLeft()).addListener(subscription.getRight());
-
                     }
                     catch (Exception e)
                     {
@@ -119,14 +115,12 @@ public class RedisOrbitClient
                         break;
                     }
                 }
-
                 isConnected = subscribedAll;
             }
         }
         catch(Throwable e)
         {
             logger.error("Unexpected connection task error", e);
-
         }
     }
 
