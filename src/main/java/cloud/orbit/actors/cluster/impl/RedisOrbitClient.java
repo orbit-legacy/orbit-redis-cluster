@@ -110,7 +110,7 @@ public class RedisOrbitClient
                     }
                     catch (Exception e)
                     {
-                        logger.warn("Could not resubscribe to '{}'\n{}", subscription.getLeft(), e);
+                        logger.warn("Could not resubscribe to '{}'", subscription.getLeft(), e);
                         subscribedAll = false;
                         break;
                     }
