@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import cloud.orbit.actors.cluster.impl.RedisConnectionManager;
 import cloud.orbit.actors.cluster.impl.RedisKeyGenerator;
 import cloud.orbit.actors.cluster.impl.RedisMsg;
-import cloud.orbit.actors.cluster.impl.RedisOrbitClient;
+import cloud.orbit.actors.cluster.impl.RedissonOrbitClient;
 import cloud.orbit.actors.cluster.impl.RedisShardedMap;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.tuples.Pair;
@@ -125,8 +125,8 @@ public class RedisClusterPeer implements ClusterPeer
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, "*");
 
         List<String> keys = new ArrayList<>();
-        List<RedisOrbitClient> clients = redisConnectionManager.getNodeDirectoryClients();
-        for(RedisOrbitClient client : clients) {
+        List<RedissonOrbitClient> clients = redisConnectionManager.getNodeDirectoryClients();
+        for(RedissonOrbitClient client : clients) {
             keys.addAll(client.getRedissonClient().getKeys().findKeysByPattern(nodeKey));
         }
 

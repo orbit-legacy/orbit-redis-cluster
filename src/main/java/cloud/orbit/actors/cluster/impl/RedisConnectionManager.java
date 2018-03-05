@@ -59,9 +59,9 @@ import java.util.stream.Collectors;
 public class RedisConnectionManager
 {
     private RedisClusterConfig redisClusterConfig = null;
-    private List<RedisOrbitClient> nodeDirectoryClients = new ArrayList<>();
-    private List<RedisOrbitClient> actorDirectoryClients = new ArrayList<>();
-    private List<RedisOrbitClient> messagingClients = new ArrayList<>();
+    private List<RedissonOrbitClient> nodeDirectoryClients = new ArrayList<>();
+    private List<RedissonOrbitClient> actorDirectoryClients = new ArrayList<>();
+    private List<RedissonOrbitClient> messagingClients = new ArrayList<>();
     private EventLoopGroup eventLoopGroup = null;
     private static Logger logger = LoggerFactory.getLogger(RedisConnectionManager.class);
 
@@ -102,28 +102,28 @@ public class RedisConnectionManager
         }
     }
 
-    public List<RedisOrbitClient> getNodeDirectoryClients()
+    public List<RedissonOrbitClient> getNodeDirectoryClients()
     {
         return Collections.unmodifiableList(nodeDirectoryClients);
     }
 
-    public List<RedisOrbitClient> getActorDirectoryClients()
+    public List<RedissonOrbitClient> getActorDirectoryClients()
     {
         return Collections.unmodifiableList(actorDirectoryClients);
     }
 
-    public List<RedisOrbitClient> getMessagingClients()
+    public List<RedissonOrbitClient> getMessagingClients()
     {
         return Collections.unmodifiableList(messagingClients);
     }
 
-    public RedisOrbitClient getShardedNodeDirectoryClient(final String shardId)
+    public RedissonOrbitClient getShardedNodeDirectoryClient(final String shardId)
     {
         final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, nodeDirectoryClients.size());
         return nodeDirectoryClients.get(jumpConsistentHash);
     }
 
-    public RedisOrbitClient getShardedActorDirectoryClient(final String shardId)
+    public RedissonOrbitClient getShardedActorDirectoryClient(final String shardId)
     {
         final int jumpConsistentHash = JumpConsistentHash.jumpConsistentHash(shardId, actorDirectoryClients.size());
         return actorDirectoryClients.get(jumpConsistentHash);
@@ -131,7 +131,7 @@ public class RedisConnectionManager
 
     public void subscribeToChannel(final String channelId, final MessageListener<Object> statusListener)
     {
-        for (final RedisOrbitClient messagingClient : messagingClients)
+        for (final RedissonOrbitClient messagingClient : messagingClients)
         {
             messagingClient.subscribe(channelId, statusListener);
         }
@@ -139,7 +139,7 @@ public class RedisConnectionManager
 
     public void sendMessageToChannel(final String channelId, final Object msg)
     {
-            final List<RedisOrbitClient> localMessagingClients = messagingClients.stream().filter((e) -> e.isConnectied()).collect(Collectors.toList());
+            final List<RedissonOrbitClient> localMessagingClients = messagingClients.stream().filter((e) -> e.isConnectied()).collect(Collectors.toList());
             final int activeClientCount = localMessagingClients.size();
             if(activeClientCount > 0)
             {
@@ -159,12 +159,12 @@ public class RedisConnectionManager
     }
 
     public void shutdownConnections() {
-        nodeDirectoryClients.forEach(RedisOrbitClient::shutdown);
-        actorDirectoryClients.forEach(RedisOrbitClient::shutdown);
-        messagingClients.forEach(RedisOrbitClient::shutdown);
+        nodeDirectoryClients.forEach(RedissonOrbitClient::shutdown);
+        actorDirectoryClients.forEach(RedissonOrbitClient::shutdown);
+        messagingClients.forEach(RedissonOrbitClient::shutdown);
     }
 
-    private RedisOrbitClient createClient(final String uri, final Boolean useJavaSerializer)
+    private RedissonOrbitClient createClient(final String uri, final Boolean useJavaSerializer)
     {
         // Resolve URI
         final URI realUri = URI.create(uri);
@@ -224,6 +224,6 @@ public class RedisConnectionManager
                     .setRetryInterval(redisClusterConfig.getRetryInterval());
 
 
-        return new RedisOrbitClient(Redisson.create(redissonConfig), redisClusterConfig.getMessagingHealthcheckInterval());
+        return new RedissonOrbitClient(Redisson.create(redissonConfig), redisClusterConfig.getMessagingHealthcheckInterval());
     }
 }

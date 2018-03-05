@@ -41,16 +41,16 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
-public class RedisOrbitClient
+public class RedissonOrbitClient
 {
-    private static Logger logger = LoggerFactory.getLogger(RedisOrbitClient.class);
+    private static Logger logger = LoggerFactory.getLogger(RedissonOrbitClient.class);
 
     private final RedissonClient redisClient;
     private volatile boolean isConnected = false;
     private final List<Pair<String, MessageListener<Object>>> subscriptions = new ArrayList<>();
     private final Timer connectionTimer;
 
-    public RedisOrbitClient(final RedissonClient redisClient, final Integer messagingHealthcheckInterval)
+    public RedissonOrbitClient(final RedissonClient redisClient, final Integer messagingHealthcheckInterval)
     {
         this.redisClient = redisClient;
         this.isConnected = redisClient.getNodesGroup().pingAll();
