@@ -58,29 +58,23 @@ public class RedisPipelineCodec implements Codec
         @Override
         public Object decode(ByteBuf buf, State state) throws IOException
         {
-            final int rawLength = buf.readableBytes();
-            final byte[] rawBytes = new byte[rawLength];
-            buf.readBytes(rawBytes);
+            ByteBuf conversionBytes = Unpooled.wrappedBuffer(buf);
 
             final ListIterator li = pipelineSteps.listIterator(pipelineSteps.size());
-            
-            byte[] conversionBytes = rawBytes;
-
-            while (li.hasPrevious()) {
+            while (li.hasPrevious())
+            {
                 final RedisPipelineStep pipelineStep = (RedisPipelineStep) li.previous();
                 conversionBytes = pipelineStep.read(conversionBytes);
             }
 
-            final ByteBuf bf = Unpooled.wrappedBuffer(conversionBytes);
-
-            return innerCodec.getValueDecoder().decode(bf, state);
+            return innerCodec.getValueDecoder().decode(conversionBytes, state);
         }
     };
 
     private final Encoder encoder = new Encoder() {
         @Override
-        public byte[] encode(Object in) throws IOException {
-            byte[] conversionBytes = innerCodec.getValueEncoder().encode(in);
+        public ByteBuf encode(Object in) throws IOException {
+            ByteBuf conversionBytes = innerCodec.getValueEncoder().encode(in);
 
             for (final RedisPipelineStep pipelineStep : pipelineSteps)
             {

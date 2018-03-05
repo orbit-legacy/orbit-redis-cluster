@@ -28,19 +28,21 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * Created by joeh on 2017-04-20.
  */
 public class RedisNoOpPipelineStep implements RedisPipelineStep
 {
     @Override
-    public byte[] read(final byte[] buf)
+    public ByteBuf read(final ByteBuf buf)
     {
         return buf;
     }
 
     @Override
-    public byte[] write(final byte[] buf)
+    public ByteBuf write(final ByteBuf buf)
     {
         return buf;
     }

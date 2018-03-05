@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -28,13 +28,31 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
-import io.netty.buffer.ByteBuf;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Created by joeh on 2017-04-20.
- */
-public interface RedisPipelineStep
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+import java.util.Random;
+
+public class RedisCompressionPipelineStepTest
 {
-    ByteBuf read(ByteBuf buf);
-    ByteBuf write(ByteBuf buf);
+    private static final int TEST_BYTE_ARRAY_SIZE = 50;
+
+    private final RedisCompressionPipelineStep redisCompressionPipelineStep = new RedisCompressionPipelineStep();
+
+    @Test
+    public void testWriteRead() {
+        final byte[] testByteArray = new byte[TEST_BYTE_ARRAY_SIZE];
+        new Random().nextBytes(testByteArray);
+
+        final ByteBuf compressedByteBuf = this.redisCompressionPipelineStep.write(Unpooled.wrappedBuffer(testByteArray));
+        final ByteBuf uncompressedByteBuf = this.redisCompressionPipelineStep.read(compressedByteBuf);
+
+        final byte[] resultantByteArray = new byte[uncompressedByteBuf.readableBytes()];
+        uncompressedByteBuf.getBytes(uncompressedByteBuf.readerIndex(),resultantByteArray);
+
+        Assert.assertArrayEquals(testByteArray, resultantByteArray);
+    }
 }

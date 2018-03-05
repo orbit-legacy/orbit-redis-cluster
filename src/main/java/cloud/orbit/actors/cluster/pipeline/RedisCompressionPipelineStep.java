@@ -28,6 +28,8 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
@@ -35,48 +37,68 @@ import net.jpountz.lz4.LZ4SafeDecompressor;
 import java.nio.ByteBuffer;
 
 /**
- * Created by joeh on 2017-04-20.
+ * <p>
+ * Used with {@link cloud.orbit.actors.cluster.impl.RedisPipelineCodec}
+ * </p>
+ *
+ * @see cloud.orbit.actors.cluster.impl.RedisPipelineCodec
+ *
+ * <p>
+ * An alternative to using this pipeline step is to create a {@link org.redisson.client.RedisClient} in
+ * {@link cloud.orbit.actors.cluster.impl.RedisConnectionManager} that is configured to use an instance of
+ * {@link org.redisson.codec.LZ4Codec} with an inner codec that converts the objects being persisted to a binary stream.
+ * Note that the {@link org.redisson.codec.LZ4Codec} uses the {@link org.redisson.codec.FstCodec} as its inner codec by
+ * default
+ * </p>
+ *
+ * @see org.redisson.codec.LZ4Codec
+ * @see org.redisson.codec.FstCodec
+ *
  */
 public class RedisCompressionPipelineStep implements RedisPipelineStep
 {
     private final LZ4Factory factory = LZ4Factory.fastestJavaInstance();
 
     @Override
-    public byte[] read(final byte[] buf)
+    public ByteBuf read(final ByteBuf compressedByteBuf)
     {
         // Calculate initial lengths
-        final Integer rawLength = buf.length;
-        final Integer compressedLength = rawLength - 4;
-
-        // Create a byte buffer we can read
-        final ByteBuffer byteBuf = ByteBuffer.allocate(buf.length);
-        byteBuf.put(buf);
-        byteBuf.rewind();
+        final int rawLength = compressedByteBuf.readableBytes();
+        final int compressedLength = rawLength - 4;
 
         // Extract the decompressed length
-        final Integer decompressedLength = byteBuf.getInt();
+        final int decompressedLength = compressedByteBuf.getInt(0);
         final byte[] decompressedBytes = new byte[decompressedLength];
 
         // Get the compressed bytes
         final byte[] compressedBytes = new byte[compressedLength];
-        byteBuf.get(compressedBytes);
+        compressedByteBuf.getBytes(4, compressedBytes);
 
         // Decompress
         final LZ4SafeDecompressor decompressor = factory.safeDecompressor();
         decompressor.decompress(compressedBytes, decompressedBytes);
 
-        return decompressedBytes;
+        return Unpooled.wrappedBuffer(decompressedBytes);
     }
 
     @Override
-    public byte[] write(final byte[] uncompressedBytes)
+    public ByteBuf write(final ByteBuf uncompressedByteBuf)
     {
+        // Calculate decompressed length and get uncompressed bytes
+        final int uncompressedLength = uncompressedByteBuf.readableBytes();
+        final byte[] uncompressedBytes = new byte[uncompressedLength];
+        uncompressedByteBuf.getBytes(uncompressedByteBuf.readerIndex(), uncompressedBytes);
+
+        // Compress the bytes
         final LZ4Compressor compressor = factory.fastCompressor();
         final byte[] compressedBytes = compressor.compress(uncompressedBytes);
-        final ByteBuffer buffer = ByteBuffer.allocate(compressedBytes.length + 4);
-        buffer.putInt(uncompressedBytes.length);
-        buffer.put(compressedBytes);
 
-        return buffer.array();
+        // Create final byte buffer to be returned
+        final ByteBuffer byteBuffer = ByteBuffer.allocate(compressedBytes.length + 4);
+        byteBuffer.putInt(uncompressedLength);
+        byteBuffer.put(compressedBytes);
+        byteBuffer.flip();
+
+        return Unpooled.wrappedBuffer(byteBuffer);
     }
 }
