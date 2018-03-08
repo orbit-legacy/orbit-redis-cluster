@@ -28,57 +28,74 @@
 
 package cloud.orbit.actors.cluster.impl.lettuce;
 
-import cloud.orbit.actors.cluster.impl.lettuce.FstSerializedObjectCodec;
-import cloud.orbit.tuples.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class LettuceOrbitClient
 {
-    private final RedisClient redisClient;
-    private final StatefulRedisPubSubConnection<String, Object> redisPubSubConnection;
-    private final RedisPubSubAsyncCommands<String, Object> redisPubSubAsyncCommands;
-    private final List<Pair<String, RedisPubSubListener<String, Object>>> subscriptions;
+    private static Logger logger = LoggerFactory.getLogger(LettuceOrbitClient.class);
 
-    private volatile boolean isConnected = false;
+    private final RedisClient redisClient;;
+    private final StatefulRedisPubSubConnection<String, Object> redisSubscribingConnection;
+    private final RedisPubSubAsyncCommands<String, Object> redisSubscribingAsyncCommands;
+    private final StatefulRedisPubSubConnection<String, Object> redisPublishingConnection;
+    private final RedisPubSubAsyncCommands<String, Object> redisPublishingAsyncCommands;
 
     public LettuceOrbitClient(final String resolvedUri)
     {
         this.redisClient = RedisClient.create(resolvedUri);
-        this.redisPubSubConnection = this.redisClient.connectPubSub(new FstSerializedObjectCodec());
-        this.redisPubSubAsyncCommands = this.redisPubSubConnection.async();
 
-        this.subscriptions = new ArrayList<>();
+        this.redisSubscribingConnection = this.redisClient.connectPubSub(new FstSerializedObjectCodec());
+        this.redisSubscribingAsyncCommands = this.redisSubscribingConnection.async();
 
-        this.isConnected = isConnected();
+        this.redisPublishingConnection = this.redisClient.connectPubSub(new FstSerializedObjectCodec());
+        this.redisPublishingAsyncCommands = this.redisPublishingConnection.async();
     }
 
     public CompletableFuture<Void> subscribe(final String channelId, final RedisPubSubListener<String, Object> messageListener)
     {
-        this.redisPubSubConnection.addListener(messageListener);
-        final RedisFuture<Void> subscribeResult = this.redisPubSubAsyncCommands.subscribe(channelId);
-        return (CompletableFuture)subscribeResult;
+        if (this.redisSubscribingConnection.isOpen())
+        {
+            this.redisSubscribingConnection.addListener(messageListener);
+            final RedisFuture<Void> subscribeResult = this.redisSubscribingAsyncCommands.subscribe(channelId);
+            return (CompletableFuture)subscribeResult;
+        }
+        else
+        {
+            logger.error("Error subscribing to channel [{}]", channelId);
+            return new CompletableFuture<>();
+        }
     }
 
-    public CompletableFuture<Long> publish(final String channelId, final Object redisMsg) {
-
-        return (CompletableFuture)this.redisPubSubAsyncCommands.publish(channelId, redisMsg);
+    public CompletableFuture<Long> publish(final String channelId, final Object redisMsg)
+    {
+        if (this.redisPublishingConnection.isOpen()) {
+            return (CompletableFuture)this.redisPublishingAsyncCommands.publish(channelId, redisMsg);
+        }
+        else
+        {
+            logger.error("Error publishing message to channel [{}]", channelId);
+            return new CompletableFuture<>();
+        }
     }
 
     public boolean isConnected()
     {
-        return this.redisPubSubConnection.isOpen();
+        return this.redisSubscribingConnection.isOpen() && this.redisPublishingConnection.isOpen();
     }
 
     public void shutdown()
     {
-        this.redisPubSubConnection.close();
+        this.redisSubscribingConnection.close();
+        this.redisPublishingConnection.close();
+        this.redisClient.shutdown();
     }
 }
