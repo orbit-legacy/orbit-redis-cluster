@@ -26,13 +26,14 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.cluster.impl;
+package cloud.orbit.actors.cluster.impl.redisson;
 
 import org.junit.Test;
 import org.redisson.client.codec.Codec;
 import org.redisson.client.codec.IntegerCodec;
 import org.redisson.client.handler.State;
 
+import cloud.orbit.actors.cluster.impl.redisson.RedisPipelineCodec;
 import cloud.orbit.actors.cluster.pipeline.RedisCompressionPipelineStep;
 import cloud.orbit.actors.cluster.pipeline.RedisNoOpPipelineStep;
 import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;

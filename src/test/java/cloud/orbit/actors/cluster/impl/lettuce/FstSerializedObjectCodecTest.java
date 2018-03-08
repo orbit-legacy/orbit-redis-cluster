@@ -26,10 +26,13 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.cluster.impl;
+package cloud.orbit.actors.cluster.impl.lettuce;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import cloud.orbit.actors.cluster.impl.RedisMsg;
+import cloud.orbit.actors.cluster.impl.lettuce.FstSerializedObjectCodec;
 
 import java.nio.ByteBuffer;
 import java.util.Random;

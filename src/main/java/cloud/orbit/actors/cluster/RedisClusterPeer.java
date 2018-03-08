@@ -35,7 +35,7 @@ import cloud.orbit.actors.cluster.impl.RedisConnectionManager;
 import cloud.orbit.actors.cluster.impl.RedisKeyGenerator;
 import cloud.orbit.actors.cluster.impl.RedisMsg;
 import cloud.orbit.actors.cluster.impl.RedisShardedMap;
-import cloud.orbit.actors.cluster.impl.RedissonOrbitClient;
+import cloud.orbit.actors.cluster.impl.redisson.RedissonOrbitClient;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.tuples.Pair;
 import io.lettuce.core.pubsub.RedisPubSubAdapter;

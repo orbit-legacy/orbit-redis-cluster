@@ -39,6 +39,9 @@ import org.slf4j.LoggerFactory;
 import com.github.ssedano.hash.JumpConsistentHash;
 
 import cloud.orbit.actors.cluster.RedisClusterConfig;
+import cloud.orbit.actors.cluster.impl.lettuce.LettuceOrbitClient;
+import cloud.orbit.actors.cluster.impl.redisson.RedisPipelineCodec;
+import cloud.orbit.actors.cluster.impl.redisson.RedissonOrbitClient;
 import cloud.orbit.exception.UncheckedException;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.netty.channel.EventLoopGroup;

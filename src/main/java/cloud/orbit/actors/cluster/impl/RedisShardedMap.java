@@ -30,6 +30,7 @@ package cloud.orbit.actors.cluster.impl;
 
 import com.github.ssedano.hash.JumpConsistentHash;
 
+import cloud.orbit.actors.cluster.impl.redisson.RedissonOrbitClient;
 import cloud.orbit.exception.NotImplementedException;
 
 import java.util.Collection;

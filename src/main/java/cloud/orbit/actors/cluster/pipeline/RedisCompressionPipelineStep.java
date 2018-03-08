@@ -28,6 +28,7 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
+import cloud.orbit.actors.cluster.impl.redisson.RedisPipelineCodec;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.jpountz.lz4.LZ4Compressor;
@@ -38,10 +39,10 @@ import java.nio.ByteBuffer;
 
 /**
  * <p>
- * Used with {@link cloud.orbit.actors.cluster.impl.RedisPipelineCodec}
+ * Used with {@link RedisPipelineCodec}
  * </p>
  *
- * @see cloud.orbit.actors.cluster.impl.RedisPipelineCodec
+ * @see RedisPipelineCodec
  *
  * <p>
  * An alternative to using this pipeline step is to create a {@link org.redisson.client.RedisClient} in
