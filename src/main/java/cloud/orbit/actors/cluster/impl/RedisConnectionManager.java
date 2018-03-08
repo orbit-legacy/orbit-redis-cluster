@@ -29,8 +29,6 @@
 package cloud.orbit.actors.cluster.impl;
 
 import org.redisson.Redisson;
-import org.redisson.api.RedissonClient;
-import org.redisson.api.listener.MessageListener;
 import org.redisson.client.codec.Codec;
 import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.codec.SerializationCodec;
@@ -42,6 +40,7 @@ import com.github.ssedano.hash.JumpConsistentHash;
 
 import cloud.orbit.actors.cluster.RedisClusterConfig;
 import cloud.orbit.exception.UncheckedException;
+import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
@@ -61,7 +60,7 @@ public class RedisConnectionManager
     private RedisClusterConfig redisClusterConfig = null;
     private List<RedissonOrbitClient> nodeDirectoryClients = new ArrayList<>();
     private List<RedissonOrbitClient> actorDirectoryClients = new ArrayList<>();
-    private List<RedissonOrbitClient> messagingClients = new ArrayList<>();
+    private List<LettuceOrbitClient> messagingClients = new ArrayList<>();
     private EventLoopGroup eventLoopGroup = null;
     private static Logger logger = LoggerFactory.getLogger(RedisConnectionManager.class);
 
@@ -80,7 +79,7 @@ public class RedisConnectionManager
         for (final String uri : nodeDirectoryMasters)
         {
             logger.info("Connecting to Redis Node Directory node at '{}'...", uri);
-            nodeDirectoryClients.add(createClient(uri, true));
+            nodeDirectoryClients.add(createRedissonOrbitClient(uri, true));
 
         }
 
@@ -88,7 +87,7 @@ public class RedisConnectionManager
         for (final String uri : actorDirectoryMasters)
         {
             logger.info("Connecting to Redis Actor Directory node at '{}'...", uri);
-            actorDirectoryClients.add(createClient(uri, true));
+            actorDirectoryClients.add(createRedissonOrbitClient(uri, true));
 
         }
 
@@ -97,7 +96,7 @@ public class RedisConnectionManager
         for (final String uri : messagingMasters)
         {
             logger.info("Connecting to Redis messaging node at '{}'...", uri);
-            messagingClients.add(createClient(uri, false));
+            messagingClients.add(createLettuceOrbitClient(uri));
 
         }
     }
@@ -112,7 +111,7 @@ public class RedisConnectionManager
         return Collections.unmodifiableList(actorDirectoryClients);
     }
 
-    public List<RedissonOrbitClient> getMessagingClients()
+    public List<LettuceOrbitClient> getMessagingClients()
     {
         return Collections.unmodifiableList(messagingClients);
     }
@@ -129,42 +128,61 @@ public class RedisConnectionManager
         return actorDirectoryClients.get(jumpConsistentHash);
     }
 
-    public void subscribeToChannel(final String channelId, final MessageListener<Object> statusListener)
+    public void subscribeToChannel(final String channelId, final RedisPubSubListener<String, Object> statusListener)
     {
-        for (final RedissonOrbitClient messagingClient : messagingClients)
+        for (final LettuceOrbitClient messagingClient : messagingClients)
         {
-            messagingClient.subscribe(channelId, statusListener);
+            messagingClient.subscribe(channelId, statusListener).exceptionally((e) ->
+            {
+                logger.error("Error subscribing to channel", e);
+                return null;
+            });
         }
     }
 
     public void sendMessageToChannel(final String channelId, final Object msg)
     {
-            final List<RedissonOrbitClient> localMessagingClients = messagingClients.stream().filter((e) -> e.isConnectied()).collect(Collectors.toList());
-            final int activeClientCount = localMessagingClients.size();
-            if(activeClientCount > 0)
+        final List<LettuceOrbitClient> localMessagingClients = messagingClients.stream().filter((e) -> e.isConnected()).collect(Collectors.toList());
+        final int activeClientCount = localMessagingClients.size();
+        if(activeClientCount > 0)
+        {
+            final int randomId = ThreadLocalRandom.current().nextInt(activeClientCount);
+            localMessagingClients.get(randomId).publish(channelId, msg).exceptionally((e) ->
             {
-                final int randomId = ThreadLocalRandom.current().nextInt(activeClientCount);
-                final RedissonClient client = localMessagingClients.get(randomId).getRedissonClient();
-
-                client.getTopic(channelId).publishAsync(msg).exceptionally((e) ->
-                {
-                    logger.error("Error sending message", e);
-                    return 0L;
-                });
-            }
-            else
-            {
-                throw new UncheckedException("No Redis messaging instances available.");
-            }
+                logger.error("Error sending message", e);
+                return null;
+            });
+        }
+        else
+        {
+            throw new UncheckedException("No Redis messaging instances available.");
+        }
     }
 
-    public void shutdownConnections() {
+    public void shutdownConnections()
+    {
         nodeDirectoryClients.forEach(RedissonOrbitClient::shutdown);
         actorDirectoryClients.forEach(RedissonOrbitClient::shutdown);
-        messagingClients.forEach(RedissonOrbitClient::shutdown);
+        messagingClients.forEach(LettuceOrbitClient::shutdown);
     }
 
-    private RedissonOrbitClient createClient(final String uri, final Boolean useJavaSerializer)
+
+    private LettuceOrbitClient createLettuceOrbitClient(final String uri)
+    {
+        return new LettuceOrbitClient(this.resolveUri(uri));
+    }
+
+    private RedissonOrbitClient createRedissonOrbitClient(final String uri, final Boolean useJavaSerializer)
+    {
+        final String resolvedUri = resolveUri(uri);
+
+        final Config redissonConfig = createRedissonConfig(useJavaSerializer, resolvedUri);
+
+        return new RedissonOrbitClient(Redisson.create(redissonConfig), redisClusterConfig.getMessagingHealthcheckInterval());
+    }
+
+
+    private String resolveUri(final String uri)
     {
         // Resolve URI
         final URI realUri = URI.create(uri);
@@ -176,17 +194,22 @@ public class RedisConnectionManager
         if (host == null) host = "localhost";
         Integer port = realUri.getPort();
         if (port == -1) port = 6379;
-        final String resolvedUri = "redis://" + host + ":" + port;
+        return "redis://" + host + ":" + port;
+    }
 
+    private Config createRedissonConfig(final Boolean useJavaSerializer, final String resolvedUri)
+    {
         final Config redissonConfig = new Config();
 
         Codec currentCodec;
 
         // Low level serializer
-        if (useJavaSerializer) {
+        if (useJavaSerializer)
+        {
             currentCodec = new SerializationCodec();
         }
-        else {
+        else
+        {
             currentCodec = new JsonJacksonCodec();
         }
 
@@ -197,33 +220,33 @@ public class RedisConnectionManager
         redissonConfig.setCodec(currentCodec);
 
         // Event loop group
-        if(eventLoopGroup != null) {
+        if (eventLoopGroup != null)
+        {
             redissonConfig.setEventLoopGroup(eventLoopGroup);
         }
 
         // Threading
         redissonConfig.setThreads(redisClusterConfig.getRedissonThreads());
         redissonConfig.setNettyThreads(redisClusterConfig.getNettyThreads());
-        if(redisClusterConfig.getRedissonExecutorService() != null) {
+        if (redisClusterConfig.getRedissonExecutorService() != null)
+        {
             redissonConfig.setExecutor(redisClusterConfig.getRedissonExecutorService());
         }
 
-            redissonConfig.useSingleServer()
-                    .setDnsMonitoring(true)
-                    .setDnsMonitoringInterval(redisClusterConfig.getDnsMonitoringInverval())
-                    .setAddress(resolvedUri)
-                    .setConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
-                    .setConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
-                    .setConnectTimeout(redisClusterConfig.getConnectionTimeout())
-                    .setTimeout(redisClusterConfig.getGeneralTimeout())
-                    .setIdleConnectionTimeout(redisClusterConfig.getIdleTimeout())
-                    .setReconnectionTimeout(redisClusterConfig.getReconnectionTimeout())
-                    .setPingTimeout(redisClusterConfig.getPingTimeout())
-                    .setFailedAttempts(redisClusterConfig.getFailedAttempts())
-                    .setRetryAttempts(redisClusterConfig.getRetryAttempts())
-                    .setRetryInterval(redisClusterConfig.getRetryInterval());
-
-
-        return new RedissonOrbitClient(Redisson.create(redissonConfig), redisClusterConfig.getMessagingHealthcheckInterval());
+        redissonConfig.useSingleServer()
+                .setDnsMonitoring(true)
+                .setDnsMonitoringInterval(redisClusterConfig.getDnsMonitoringInverval())
+                .setAddress(resolvedUri)
+                .setConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
+                .setConnectionPoolSize(redisClusterConfig.getMaxRedisConnections())
+                .setConnectTimeout(redisClusterConfig.getConnectionTimeout())
+                .setTimeout(redisClusterConfig.getGeneralTimeout())
+                .setIdleConnectionTimeout(redisClusterConfig.getIdleTimeout())
+                .setReconnectionTimeout(redisClusterConfig.getReconnectionTimeout())
+                .setPingTimeout(redisClusterConfig.getPingTimeout())
+                .setFailedAttempts(redisClusterConfig.getFailedAttempts())
+                .setRetryAttempts(redisClusterConfig.getRetryAttempts())
+                .setRetryInterval(redisClusterConfig.getRetryInterval());
+        return redissonConfig;
     }
 }

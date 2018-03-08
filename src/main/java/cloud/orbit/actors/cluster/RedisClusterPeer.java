@@ -34,10 +34,12 @@ import org.slf4j.LoggerFactory;
 import cloud.orbit.actors.cluster.impl.RedisConnectionManager;
 import cloud.orbit.actors.cluster.impl.RedisKeyGenerator;
 import cloud.orbit.actors.cluster.impl.RedisMsg;
-import cloud.orbit.actors.cluster.impl.RedissonOrbitClient;
 import cloud.orbit.actors.cluster.impl.RedisShardedMap;
+import cloud.orbit.actors.cluster.impl.RedissonOrbitClient;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.tuples.Pair;
+import io.lettuce.core.pubsub.RedisPubSubAdapter;
+import io.lettuce.core.pubsub.RedisPubSubListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,10 +104,15 @@ public class RedisClusterPeer implements ClusterPeer
 
         // Subscribe to Pub Sub
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisConnectionManager.subscribeToChannel(nodeKey, (chan, msg) ->
+        RedisPubSubListener<String, Object> listener = new RedisPubSubAdapter<String, Object>()
         {
-            receiveMessage((RedisMsg) msg);
-        });
+            @Override
+            public void message(String channel, Object redisMsg)
+            {
+                receiveMessage((RedisMsg)redisMsg);
+            }
+        };
+        redisConnectionManager.subscribeToChannel(nodeKey, listener);
 
 
         writeMyEntry();

@@ -52,6 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <developerConnection>scm:git:ssh://git@github.com/orbit/orbit-redis-cluster.git</developerConnection>
     </scm>
 
+
     <dependencies>
         <dependency>
             <groupId>cloud.orbit</groupId>
@@ -64,6 +65,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>com.github.ssedano</groupId>
             <artifactId>jump-consistent-hash</artifactId>
             <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>fst</artifactId>
+            <version>2.57</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>5.0.2.RELEASE</version>
         </dependency>
 
         <dependency>
