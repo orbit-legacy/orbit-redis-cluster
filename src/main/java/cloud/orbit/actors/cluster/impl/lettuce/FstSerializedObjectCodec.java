@@ -64,7 +64,7 @@ public class FstSerializedObjectCodec implements RedisCodec<String, Object>
         }
         catch (Exception e)
         {
-            return null;
+            throw new IllegalStateException(e);
         }
     }
 
@@ -86,7 +86,7 @@ public class FstSerializedObjectCodec implements RedisCodec<String, Object>
         }
         catch (IOException e)
         {
-            return null;
+            throw new IllegalStateException(e);
         }
     }
 }
