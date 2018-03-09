@@ -28,6 +28,7 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,7 +38,7 @@ import java.util.List;
 public class RedisBasicPipeline
 {
     public static List<RedisPipelineStep> defaultPipeline() {
-        return compressionOnlyPipeline();
+        return new ArrayList<>();
     }
 
     public static List<RedisPipelineStep> noOpPipeline() {
