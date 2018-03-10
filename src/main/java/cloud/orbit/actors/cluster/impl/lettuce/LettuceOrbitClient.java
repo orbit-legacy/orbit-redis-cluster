@@ -71,7 +71,9 @@ public class LettuceOrbitClient
         else
         {
             logger.error("Error subscribing to channel [{}]", channelId);
-            return new CompletableFuture<>();
+            final CompletableFuture<Void> result = new CompletableFuture<>();
+            result.completeExceptionally(new IllegalStateException("Error subscribing to channel..."));
+            return result;
         }
     }
 
@@ -83,7 +85,9 @@ public class LettuceOrbitClient
         else
         {
             logger.error("Error publishing message to channel [{}]", channelId);
-            return new CompletableFuture<>();
+            final CompletableFuture<Long> result = new CompletableFuture<>();
+            result.completeExceptionally(new IllegalStateException("Error publishing to channel..."));
+            return result;
         }
     }
 
