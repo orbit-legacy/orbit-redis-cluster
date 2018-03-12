@@ -30,7 +30,7 @@ package cloud.orbit.actors.cluster.pipeline;
 
 import cloud.orbit.actors.cluster.impl.redisson.RedisPipelineCodec;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufAllocator;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
@@ -49,7 +49,7 @@ import java.nio.ByteBuffer;
  * {@link cloud.orbit.actors.cluster.impl.RedisConnectionManager} that is configured to use an instance of
  * {@link org.redisson.codec.LZ4Codec} with an inner codec that converts the objects being persisted to a binary stream.
  * Note that the {@link org.redisson.codec.LZ4Codec} uses the {@link org.redisson.codec.FstCodec} as its inner codec by
- * default
+ * default.
  * </p>
  *
  * @see org.redisson.codec.LZ4Codec
@@ -58,48 +58,52 @@ import java.nio.ByteBuffer;
  */
 public class RedisCompressionPipelineStep implements RedisPipelineStep
 {
+    private static final int DECOMPRESSION_HEADER_SIZE = Integer.SIZE / 8;
     private final LZ4Factory factory = LZ4Factory.fastestJavaInstance();
 
     @Override
-    public ByteBuf read(final ByteBuf compressedByteBuf)
+    public ByteBuf read(final ByteBuf compressed)
     {
-        // Calculate initial lengths
-        final int rawLength = compressedByteBuf.readableBytes();
-        final int compressedLength = rawLength - 4;
-
-        // Extract the decompressed length
-        final int decompressedLength = compressedByteBuf.getInt(0);
-        final byte[] decompressedBytes = new byte[decompressedLength];
-
-        // Get the compressed bytes
-        final byte[] compressedBytes = new byte[compressedLength];
-        compressedByteBuf.getBytes(4, compressedBytes);
-
-        // Decompress
-        final LZ4SafeDecompressor decompressor = factory.safeDecompressor();
-        decompressor.decompress(compressedBytes, decompressedBytes);
-
-        return Unpooled.wrappedBuffer(decompressedBytes);
+        try
+        {
+            final int decompressedLength = compressed.readInt();
+            final LZ4SafeDecompressor decompressor = factory.safeDecompressor();
+            final ByteBuf decompressed = ByteBufAllocator.DEFAULT.buffer(decompressedLength);
+            final ByteBuffer decompressedBuffer = decompressed.internalNioBuffer(decompressed.writerIndex(), decompressed.writableBytes());
+            final int pos = decompressedBuffer.position();
+            decompressor.decompress(compressed.internalNioBuffer(compressed.readerIndex(), compressed.readableBytes()), decompressedBuffer);
+            final int compressedLength = decompressedBuffer.position() - pos;
+            decompressed.writerIndex(compressedLength);
+            return decompressed;
+        }
+        finally
+        {
+            compressed.release();
+        }
     }
 
+
     @Override
-    public ByteBuf write(final ByteBuf uncompressedByteBuf)
+    public ByteBuf write(final ByteBuf decompressed)
     {
-        // Calculate decompressed length and get uncompressed bytes
-        final int uncompressedLength = uncompressedByteBuf.readableBytes();
-        final byte[] uncompressedBytes = new byte[uncompressedLength];
-        uncompressedByteBuf.getBytes(uncompressedByteBuf.readerIndex(), uncompressedBytes);
-
-        // Compress the bytes
-        final LZ4Compressor compressor = factory.fastCompressor();
-        final byte[] compressedBytes = compressor.compress(uncompressedBytes);
-
-        // Create final byte buffer to be returned
-        final ByteBuffer byteBuffer = ByteBuffer.allocate(compressedBytes.length + 4);
-        byteBuffer.putInt(uncompressedLength);
-        byteBuffer.put(compressedBytes);
-        byteBuffer.flip();
-
-        return Unpooled.wrappedBuffer(byteBuffer);
+        try
+        {
+            final int decompressedLength = decompressed.readableBytes();
+            final LZ4Compressor compressor = factory.fastCompressor();
+            final int compressedMaxLength = compressor.maxCompressedLength(decompressedLength);
+            final ByteBuf compressed = ByteBufAllocator.DEFAULT.buffer(compressedMaxLength + DECOMPRESSION_HEADER_SIZE);
+            compressed.writeInt(decompressedLength);
+            final ByteBuffer compressedBuffer = compressed.internalNioBuffer(compressed.writerIndex(), compressed.writableBytes());
+            final int pos = compressedBuffer.position();
+            final ByteBuffer decompressedBuffer = decompressed.internalNioBuffer(decompressed.readerIndex(), decompressed.readableBytes());
+            compressor.compress(decompressedBuffer, compressedBuffer);
+            final int compressedLength = compressedBuffer.position() - pos;
+            compressed.writerIndex(compressed.writerIndex() + compressedLength);
+            return compressed;
+        }
+        finally
+        {
+            decompressed.release();
+        }
     }
 }

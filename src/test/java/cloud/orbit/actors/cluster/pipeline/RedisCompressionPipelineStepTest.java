@@ -28,13 +28,15 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.util.Random;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class RedisCompressionPipelineStepTest
 {
@@ -46,13 +48,16 @@ public class RedisCompressionPipelineStepTest
     public void testWriteRead() {
         final byte[] testByteArray = new byte[TEST_BYTE_ARRAY_SIZE];
         new Random().nextBytes(testByteArray);
+        ByteBuf testByteBuf = Unpooled.wrappedBuffer(testByteArray);
 
-        final ByteBuf compressedByteBuf = this.redisCompressionPipelineStep.write(Unpooled.wrappedBuffer(testByteArray));
-        final ByteBuf uncompressedByteBuf = this.redisCompressionPipelineStep.read(compressedByteBuf);
+        final ByteBuf compressedByteBuf = this.redisCompressionPipelineStep.write(testByteBuf);
+        assertEquals(testByteBuf.refCnt(), 0);
 
-        final byte[] resultantByteArray = new byte[uncompressedByteBuf.readableBytes()];
-        uncompressedByteBuf.getBytes(uncompressedByteBuf.readerIndex(),resultantByteArray);
+        final ByteBuf decompressedByteBuf = this.redisCompressionPipelineStep.read(compressedByteBuf);
+        assertEquals(compressedByteBuf.refCnt(), 0);
 
-        Assert.assertArrayEquals(testByteArray, resultantByteArray);
+        final byte[] resultantByteArray = new byte[decompressedByteBuf.readableBytes()];
+        decompressedByteBuf.getBytes(decompressedByteBuf.readerIndex(),resultantByteArray);
+        assertArrayEquals(testByteArray, resultantByteArray);
     }
 }
