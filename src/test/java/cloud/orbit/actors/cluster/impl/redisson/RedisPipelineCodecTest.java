@@ -33,7 +33,6 @@ import org.redisson.client.codec.Codec;
 import org.redisson.client.codec.IntegerCodec;
 import org.redisson.client.handler.State;
 
-import cloud.orbit.actors.cluster.impl.redisson.RedisPipelineCodec;
 import cloud.orbit.actors.cluster.pipeline.RedisCompressionPipelineStep;
 import cloud.orbit.actors.cluster.pipeline.RedisNoOpPipelineStep;
 import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;
@@ -57,7 +56,6 @@ public class RedisPipelineCodecTest {
 
         final ByteBuf encodedTestIntAsByteBuf = testRedisPipelineCodec.getValueEncoder().encode(TEST_INT);
         final Integer decodedTestInt = (Integer)testRedisPipelineCodec.getValueDecoder().decode(encodedTestIntAsByteBuf, new State(false));
-
         assertEquals(decodedTestInt, TEST_INT);
     }
 
@@ -69,7 +67,6 @@ public class RedisPipelineCodecTest {
 
         final ByteBuf encodedTestIntAsByteBuf = testRedisPipelineCodec.getValueEncoder().encode(TEST_INT);
         final Integer decodedTestInt = (Integer)testRedisPipelineCodec.getValueDecoder().decode(encodedTestIntAsByteBuf, new State(false));
-
         assertEquals(decodedTestInt, TEST_INT);
     }
 
@@ -80,7 +77,6 @@ public class RedisPipelineCodecTest {
 
         final ByteBuf encodedTestIntAsByteBuf = testRedisPipelineCodec.getValueEncoder().encode(TEST_INT);
         final Integer decodedTestInt = (Integer)testRedisPipelineCodec.getValueDecoder().decode(encodedTestIntAsByteBuf, new State(false));
-
         assertEquals(decodedTestInt, TEST_INT);
     }
 
@@ -91,7 +87,6 @@ public class RedisPipelineCodecTest {
 
         final ByteBuf encodedTestIntAsByteBuf = testRedisPipelineCodec.getValueEncoder().encode(TEST_INT);
         final Integer decodedTestInt = (Integer)testRedisPipelineCodec.getValueDecoder().decode(encodedTestIntAsByteBuf, new State(false));
-
         assertEquals(decodedTestInt, TEST_INT);
     }
 }

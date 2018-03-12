@@ -35,6 +35,7 @@ import org.redisson.client.protocol.Encoder;
 
 import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
@@ -58,16 +59,25 @@ public class RedisPipelineCodec implements Codec
         @Override
         public Object decode(ByteBuf buf, State state) throws IOException
         {
-            ByteBuf conversionBytes = Unpooled.wrappedBuffer(buf);
-
-            final ListIterator li = pipelineSteps.listIterator(pipelineSteps.size());
-            while (li.hasPrevious())
+            ByteBuf conversionBytes = ByteBufAllocator.DEFAULT.buffer(buf.readableBytes());
+            try
             {
-                final RedisPipelineStep pipelineStep = (RedisPipelineStep) li.previous();
-                conversionBytes = pipelineStep.read(conversionBytes);
-            }
+                conversionBytes.writeBytes(buf);
 
-            return innerCodec.getValueDecoder().decode(conversionBytes, state);
+                final ListIterator li = pipelineSteps.listIterator(pipelineSteps.size());
+                while (li.hasPrevious())
+                {
+                    final RedisPipelineStep pipelineStep = (RedisPipelineStep) li.previous();
+                    conversionBytes = pipelineStep.read(conversionBytes);
+                }
+
+                final Object decodedObject = innerCodec.getValueDecoder().decode(conversionBytes, state);
+                return decodedObject;
+            }
+            finally
+            {
+                conversionBytes.release();
+            }
         }
     };
 
