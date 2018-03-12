@@ -30,8 +30,8 @@ package cloud.orbit.actors.cluster.impl;
 
 import org.redisson.Redisson;
 import org.redisson.client.codec.Codec;
+import org.redisson.codec.FstCodec;
 import org.redisson.codec.JsonJacksonCodec;
-import org.redisson.codec.SerializationCodec;
 import org.redisson.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,7 +209,7 @@ public class RedisConnectionManager
         // Low level serializer
         if (useJavaSerializer)
         {
-            currentCodec = new SerializationCodec();
+            currentCodec = new FstCodec();
         }
         else
         {
