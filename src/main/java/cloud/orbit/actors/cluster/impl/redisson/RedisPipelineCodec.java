@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,7 +26,7 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.cluster.impl;
+package cloud.orbit.actors.cluster.impl.redisson;
 
 import org.redisson.client.codec.Codec;
 import org.redisson.client.handler.State;
@@ -35,6 +35,7 @@ import org.redisson.client.protocol.Encoder;
 
 import cloud.orbit.actors.cluster.pipeline.RedisPipelineStep;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
@@ -58,29 +59,32 @@ public class RedisPipelineCodec implements Codec
         @Override
         public Object decode(ByteBuf buf, State state) throws IOException
         {
-            final int rawLength = buf.readableBytes();
-            final byte[] rawBytes = new byte[rawLength];
-            buf.readBytes(rawBytes);
+            ByteBuf conversionBytes = ByteBufAllocator.DEFAULT.buffer(buf.readableBytes());
+            try
+            {
+                conversionBytes.writeBytes(buf);
 
-            final ListIterator li = pipelineSteps.listIterator(pipelineSteps.size());
-            
-            byte[] conversionBytes = rawBytes;
+                final ListIterator li = pipelineSteps.listIterator(pipelineSteps.size());
+                while (li.hasPrevious())
+                {
+                    final RedisPipelineStep pipelineStep = (RedisPipelineStep) li.previous();
+                    conversionBytes = pipelineStep.read(conversionBytes);
+                }
 
-            while (li.hasPrevious()) {
-                final RedisPipelineStep pipelineStep = (RedisPipelineStep) li.previous();
-                conversionBytes = pipelineStep.read(conversionBytes);
+                final Object decodedObject = innerCodec.getValueDecoder().decode(conversionBytes, state);
+                return decodedObject;
             }
-
-            final ByteBuf bf = Unpooled.wrappedBuffer(conversionBytes);
-
-            return innerCodec.getValueDecoder().decode(bf, state);
+            finally
+            {
+                conversionBytes.release();
+            }
         }
     };
 
     private final Encoder encoder = new Encoder() {
         @Override
-        public byte[] encode(Object in) throws IOException {
-            byte[] conversionBytes = innerCodec.getValueEncoder().encode(in);
+        public ByteBuf encode(Object in) throws IOException {
+            ByteBuf conversionBytes = innerCodec.getValueEncoder().encode(in);
 
             for (final RedisPipelineStep pipelineStep : pipelineSteps)
             {

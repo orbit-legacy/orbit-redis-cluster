@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,26 +26,32 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.cluster.pipeline;
+package cloud.orbit.actors.cluster.impl.lettuce;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Created by joeh on 2017-04-20.
- */
-public class RedisBasicPipeline
+import cloud.orbit.actors.cluster.impl.RedisMsg;
+import cloud.orbit.actors.cluster.impl.lettuce.FstSerializedObjectCodec;
+
+import java.nio.ByteBuffer;
+import java.util.Random;
+import java.util.UUID;
+
+public class FstSerializedObjectCodecTest
 {
-    public static List<RedisPipelineStep> defaultPipeline() {
-        return new ArrayList<>();
-    }
+    FstSerializedObjectCodec codec = new FstSerializedObjectCodec();
 
-    public static List<RedisPipelineStep> noOpPipeline() {
-        return Arrays.asList(new RedisNoOpPipelineStep());
-    }
+    @Test
+    public void testEncodeDecodeValue() {
+        final byte[] b = new byte[20];
+        new Random().nextBytes(b);
+        final RedisMsg testRedisMsg = new RedisMsg(UUID.randomUUID(), b);
 
-    public static List<RedisPipelineStep> compressionOnlyPipeline() {
-        return Arrays.asList(new RedisCompressionPipelineStep());
+        final ByteBuffer bb = codec.encodeValue(testRedisMsg);
+        final RedisMsg decodedRedisMsg = (RedisMsg)codec.decodeValue(bb);
+
+        Assert.assertEquals(testRedisMsg.getSenderAddress(), decodedRedisMsg.getSenderAddress());
+        Assert.assertArrayEquals(testRedisMsg.getMessageContents(), decodedRedisMsg.getMessageContents());
     }
 }

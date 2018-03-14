@@ -29,6 +29,8 @@
 package cloud.orbit.actors.cluster.impl;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -38,6 +40,11 @@ public class RedisMsg implements Serializable
 {
     private UUID senderAddress;
     private byte[] messageContents;
+
+    public RedisMsg(final UUID senderAddress, final byte[] messageContents) {
+        this.senderAddress = senderAddress;
+        this.messageContents = messageContents;
+    }
 
     public UUID getSenderAddress()
     {
@@ -57,5 +64,21 @@ public class RedisMsg implements Serializable
     public void setMessageContents(byte[] messageContents)
     {
         this.messageContents = messageContents;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final RedisMsg redisMsg = (RedisMsg) o;
+        return Objects.equals(senderAddress, redisMsg.senderAddress) &&
+                Arrays.equals(messageContents, redisMsg.messageContents);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(senderAddress);
+        result = 31 * result + Arrays.hashCode(messageContents);
+        return result;
     }
 }

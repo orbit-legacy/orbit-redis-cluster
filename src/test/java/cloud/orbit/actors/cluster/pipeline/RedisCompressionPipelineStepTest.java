@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -28,24 +28,36 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.junit.Test;
 
-/**
- * Created by joeh on 2017-04-20.
- */
-public class RedisBasicPipeline
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+import java.util.Random;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+public class RedisCompressionPipelineStepTest
 {
-    public static List<RedisPipelineStep> defaultPipeline() {
-        return new ArrayList<>();
-    }
+    private static final int TEST_BYTE_ARRAY_SIZE = 50;
 
-    public static List<RedisPipelineStep> noOpPipeline() {
-        return Arrays.asList(new RedisNoOpPipelineStep());
-    }
+    private final RedisCompressionPipelineStep redisCompressionPipelineStep = new RedisCompressionPipelineStep();
 
-    public static List<RedisPipelineStep> compressionOnlyPipeline() {
-        return Arrays.asList(new RedisCompressionPipelineStep());
+    @Test
+    public void testWriteRead() {
+        final byte[] testByteArray = new byte[TEST_BYTE_ARRAY_SIZE];
+        new Random().nextBytes(testByteArray);
+        ByteBuf testByteBuf = Unpooled.wrappedBuffer(testByteArray);
+
+        final ByteBuf compressedByteBuf = this.redisCompressionPipelineStep.write(testByteBuf);
+        assertEquals(testByteBuf.refCnt(), 0);
+
+        final ByteBuf decompressedByteBuf = this.redisCompressionPipelineStep.read(compressedByteBuf);
+        assertEquals(compressedByteBuf.refCnt(), 0);
+
+        final byte[] resultantByteArray = new byte[decompressedByteBuf.readableBytes()];
+        decompressedByteBuf.getBytes(decompressedByteBuf.readerIndex(),resultantByteArray);
+        assertArrayEquals(testByteArray, resultantByteArray);
     }
 }

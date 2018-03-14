@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,7 +26,7 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.cluster.impl;
+package cloud.orbit.actors.cluster.impl.redisson;
 
 import org.redisson.api.RedissonClient;
 import org.redisson.api.listener.MessageListener;
@@ -41,16 +41,16 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
-public class RedisOrbitClient
+public class RedissonOrbitClient
 {
-    private static Logger logger = LoggerFactory.getLogger(RedisOrbitClient.class);
+    private static Logger logger = LoggerFactory.getLogger(RedissonOrbitClient.class);
 
     private final RedissonClient redisClient;
     private volatile boolean isConnected = false;
     private final List<Pair<String, MessageListener<Object>>> subscriptions = new ArrayList<>();
     private final Timer connectionTimer;
 
-    public RedisOrbitClient(final RedissonClient redisClient, final Integer messagingHealthcheckInterval)
+    public RedissonOrbitClient(final RedissonClient redisClient, final Integer messagingHealthcheckInterval)
     {
         this.redisClient = redisClient;
         this.isConnected = redisClient.getNodesGroup().pingAll();
