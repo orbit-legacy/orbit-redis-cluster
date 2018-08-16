@@ -138,8 +138,10 @@ public class RedisClusterPeer implements ClusterPeer
                 try {
                     nodeAddresses.add(new NodeAddressImpl(UUID.fromString(rawKey)));
                 } catch(IllegalArgumentException e) {
-                    logger.error("Error get node address for {}", key, e);
+                    logger.error("Error getting node address for {}", key, e);
                 }
+            } else {
+                logger.error("Null bucket raw key for {}", key);
             }
         }
 
