@@ -134,7 +134,13 @@ public class RedisClusterPeer implements ClusterPeer
         for (final String key : keys)
         {
             final String rawKey = (String) redisConnectionManager.getShardedNodeDirectoryClient(key).getRedissonClient().getBucket(key).get();
-            nodeAddresses.add(new NodeAddressImpl(UUID.fromString(rawKey)));
+            if (rawKey != null) {
+                try {
+                    nodeAddresses.add(new NodeAddressImpl(UUID.fromString(rawKey)));
+                } catch(IllegalArgumentException e) {
+                    logger.error("Error get node address for {}", key, e);
+                }
+            }
         }
 
         viewListener.onViewChange(nodeAddresses);
