@@ -143,7 +143,7 @@ public class RedisConnectionManager
             sendMessageToChannel(channelId, msg, localMessagingClients, 0);
     }
 
-    private void sendMessageToChannel(final String channelId, final Object msg, List<RedisOrbitClient> localMessagingClients, final int attempt) {
+    private void sendMessageToChannel(final String channelId, final Object msg, final List<RedisOrbitClient> localMessagingClients, final int attempt) {
         final int activeClientCount = localMessagingClients.size();
         if(activeClientCount > 0)
         {
@@ -159,7 +159,7 @@ public class RedisConnectionManager
                                if(attempt >= redisClusterConfig.getMessageResendAttempts()) {
                                    logger.error("Failed to send message to channel '{}' after {} attempts.", channelId, attempt);
                                } else {
-                                   logger.warn("Failed to send message to channel '{}' on attempt {}. Retrying...");
+                                   logger.warn("Failed to send message to channel '{}' on attempt {}. Retrying...", channelId, attempt);
                                    sendMessageToChannel(channelId, msg, localMessagingClients, attempt + 1);
                                }
                            }
