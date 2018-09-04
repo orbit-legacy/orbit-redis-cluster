@@ -55,7 +55,7 @@ public class RedisClusterConfig
     private Integer retryAttempts = 5;
     private Integer retryInterval = 1000;
     private Integer failedAttempts = Integer.MAX_VALUE;
-    private Integer messageResendAttempts = Integer.MAX_VALUE;
+    private Integer messageSendAttempts = Integer.MAX_VALUE;
     private Boolean dnsMonitoring = true;
     private Integer dnsMonitoringInverval = 10000;
     private Integer messagingHealthcheckInterval = 10000;
@@ -312,13 +312,13 @@ public class RedisClusterConfig
         this.messagingHealthcheckInterval = messagingHealthcheckInterval;
     }
 
-    public Integer getMessageResendAttempts()
+    public Integer getMessageSendAttempts()
     {
-        return messageResendAttempts;
+        return messageSendAttempts;
     }
 
-    public void setMessageResendAttempts(Integer messageResendAttempts)
+    public void setMessageSendAttempts(Integer messageSendAttempts)
     {
-        this.messageResendAttempts = messageResendAttempts;
+        this.messageSendAttempts = messageSendAttempts;
     }
 }

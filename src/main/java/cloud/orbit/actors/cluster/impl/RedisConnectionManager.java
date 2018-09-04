@@ -139,35 +139,41 @@ public class RedisConnectionManager
 
     public void sendMessageToChannel(final String channelId, final Object msg)
     {
-            final List<RedisOrbitClient> localMessagingClients = messagingClients.stream().filter((e) -> e.isConnectied()).collect(Collectors.toList());
-            sendMessageToChannel(channelId, msg, localMessagingClients, 0);
+            final List<RedisOrbitClient> localMessagingClients = messagingClients.stream().filter((e) -> e.isConnectied()).collect(Collectors.toCollection(ArrayList::new));
+            sendMessageToChannel(channelId, msg, localMessagingClients, 1);
     }
 
-    private void sendMessageToChannel(final String channelId, final Object msg, final List<RedisOrbitClient> localMessagingClients, final int attempt) {
+    private void sendMessageToChannel(final String channelId, final Object msg, final List<RedisOrbitClient> localMessagingClients, final int attempt)
+    {
         final int activeClientCount = localMessagingClients.size();
-        if(activeClientCount > 0)
-        {
-            final int randomId = ThreadLocalRandom.current().nextInt(activeClientCount);
-            final RedissonClient client = localMessagingClients.get(randomId).getRedissonClient();
-
-            client.getTopic(channelId).publishAsync(msg)
-                    .whenComplete((x, e) -> {
-                       if(e != null) {
-                           logger.error("Failed to send message to channel '{}'", channelId, e);
-                       } else if(x == 0) {
-                           if(attempt >= redisClusterConfig.getMessageResendAttempts()) {
-                               logger.error("Failed to send message to channel '{}' after {} attempts.", channelId, attempt);
-                           } else {
-                               logger.warn("Failed to send message to channel '{}' on attempt {}. Retrying...", channelId, attempt);
-                               sendMessageToChannel(channelId, msg, localMessagingClients, attempt + 1);
-                           }
-                       }
-                    });
-        }
-        else
+        if (activeClientCount == 0)
         {
             logger.error("Failed to send message to channel '{}', no redis messaging instances were available after {} attempts.", channelId, attempt);
         }
+
+        final int randomId = ThreadLocalRandom.current().nextInt(activeClientCount);
+        final RedissonClient client = localMessagingClients.remove(randomId).getRedissonClient();
+
+        client.getTopic(channelId).publishAsync(msg)
+                .whenComplete((numClientsReceived, exception) -> {
+                    if (exception != null)
+                    {
+                        logger.error("Failed to send message to channel '{}'", channelId, exception);
+                    }
+                    else if (numClientsReceived == 0)
+                    {
+                        if (attempt >= redisClusterConfig.getMessageSendAttempts())
+                        {
+                            logger.error("Failed to send message to channel '{}' after {} attempts.", channelId, attempt);
+                        }
+                        else
+                        {
+                            logger.warn("Failed to send message to channel '{}' on attempt {}. Retrying...", channelId, attempt);
+                            sendMessageToChannel(channelId, msg, localMessagingClients, attempt + 1);
+                        }
+                    }
+                });
+
     }
 
     public void shutdownConnections() {
