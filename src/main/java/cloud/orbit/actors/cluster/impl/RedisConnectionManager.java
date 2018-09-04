@@ -167,7 +167,6 @@ public class RedisConnectionManager
         else
         {
             logger.error("Failed to send message to channel '{}', no redis messaging instances were available after {} attempts.", channelId, attempt);
-            throw new UncheckedException("No Redis messaging instances available.");
         }
     }
 
