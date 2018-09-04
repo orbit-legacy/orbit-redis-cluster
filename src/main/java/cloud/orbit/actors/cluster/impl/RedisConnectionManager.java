@@ -154,18 +154,14 @@ public class RedisConnectionManager
                     .whenComplete((x, e) -> {
                        if(e != null) {
                            logger.error("Failed to send message to channel '{}'", channelId, e);
-                       } else {
-                           if(x == 0) {
-                               if(attempt >= redisClusterConfig.getMessageResendAttempts()) {
-                                   logger.error("Failed to send message to channel '{}' after {} attempts.", channelId, attempt);
-                               } else {
-                                   logger.warn("Failed to send message to channel '{}' on attempt {}. Retrying...", channelId, attempt);
-                                   sendMessageToChannel(channelId, msg, localMessagingClients, attempt + 1);
-                               }
+                       } else if(x == 0) {
+                           if(attempt >= redisClusterConfig.getMessageResendAttempts()) {
+                               logger.error("Failed to send message to channel '{}' after {} attempts.", channelId, attempt);
+                           } else {
+                               logger.warn("Failed to send message to channel '{}' on attempt {}. Retrying...", channelId, attempt);
+                               sendMessageToChannel(channelId, msg, localMessagingClients, attempt + 1);
                            }
                        }
-
-
                     });
         }
         else
