@@ -129,6 +129,11 @@ public class RedisClusterBuilder
         return this;
     }
 
+    public RedisClusterBuilder messageSendAttempts(final Integer messageSendAttempts) {
+        redisClusterConfig.setMessageSendAttempts(messageSendAttempts);
+        return this;
+    }
+
     public RedisClusterBuilder retryInterval(final Integer retryInterval) {
         redisClusterConfig.setRetryInterval(retryInterval);
         return this;
