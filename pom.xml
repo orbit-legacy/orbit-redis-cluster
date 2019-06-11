@@ -43,7 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Redis Cluster</name>
 
     <properties>
-        <orbit.version>1.3.0</orbit.version>
+        <orbit.version>1.13.0-rc1</orbit.version>
     </properties>
 
     <scm>
