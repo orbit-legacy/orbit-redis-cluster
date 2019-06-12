@@ -47,7 +47,7 @@ public class RedisOrbitClient
 
     private final RedissonClient redisClient;
     private volatile boolean isConnected = false;
-    private final List<Pair<String, MessageListener<Object>>> subscriptions = new ArrayList<>();
+    private final List<Pair<String, MessageListener<RedisMsg>>> subscriptions = new ArrayList<>();
     private final Timer connectionTimer;
 
     public RedisOrbitClient(final RedissonClient redisClient, final Integer messagingHealthcheckInterval)
@@ -67,12 +67,12 @@ public class RedisOrbitClient
         connectionTask();
     }
 
-    public void subscribe(final String channelId, final MessageListener<Object> messageListener)
+    public void subscribe(final String channelId, final MessageListener<RedisMsg> messageListener)
     {
         subscriptions.add(Pair.of(channelId, messageListener));
         if(isConnected)
         {
-            redisClient.getTopic(channelId).addListener(messageListener);
+            redisClient.getTopic(channelId).addListener(RedisMsg.class, messageListener);
         }
     }
 
@@ -101,12 +101,12 @@ public class RedisOrbitClient
             if (nowConnected && !isConnected)
             {
                 boolean subscribedAll = true;
-                for (Pair<String, MessageListener<Object>> subscription : subscriptions)
+                for (Pair<String, MessageListener<RedisMsg>> subscription : subscriptions)
                 {
                     try
                     {
                         redisClient.getTopic(subscription.getLeft()).removeAllListeners();
-                        redisClient.getTopic(subscription.getLeft()).addListener(subscription.getRight());
+                        redisClient.getTopic(subscription.getLeft()).addListener(RedisMsg.class, subscription.getRight());
                     }
                     catch (Exception e)
                     {

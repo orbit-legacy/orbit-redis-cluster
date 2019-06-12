@@ -97,10 +97,7 @@ public class RedisClusterPeer implements ClusterPeer
 
         // Subscribe to Pub Sub
         final String nodeKey = RedisKeyGenerator.nodeKey(clusterName, localAddress.toString());
-        redisConnectionManager.subscribeToChannel(nodeKey, (chan, msg) ->
-        {
-            receiveMessage((RedisMsg) msg);
-        });
+        redisConnectionManager.subscribeToChannel(nodeKey, (channel, msg) -> receiveMessage(msg));
 
 
         writeMyEntry();

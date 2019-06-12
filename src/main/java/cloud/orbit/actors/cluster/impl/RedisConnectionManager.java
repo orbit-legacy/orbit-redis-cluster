@@ -129,7 +129,7 @@ public class RedisConnectionManager
         return actorDirectoryClients.get(jumpConsistentHash);
     }
 
-    public void subscribeToChannel(final String channelId, final MessageListener<Object> statusListener)
+    public void subscribeToChannel(final String channelId, final MessageListener<RedisMsg> statusListener)
     {
         for (final RedisOrbitClient messagingClient : messagingClients)
         {
@@ -228,7 +228,6 @@ public class RedisConnectionManager
         }
 
             redissonConfig.useSingleServer()
-                    .setDnsMonitoring(true)
                     .setDnsMonitoringInterval(redisClusterConfig.getDnsMonitoringInverval())
                     .setAddress(resolvedUri)
                     .setConnectionMinimumIdleSize(redisClusterConfig.getMinRedisConnections())
