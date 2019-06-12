@@ -59,7 +59,7 @@ public class RedisClusterPeer implements ClusterPeer
     private RedisClusterConfig config;
     private RedisConnectionManager redisConnectionManager;
 
-    private final ConcurrentMap<String, ConcurrentMap<?, ?>> cacheManager = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, DistributedMap<?, ?>> cacheManager = new ConcurrentHashMap<>();
 
 
     public RedisClusterPeer(final RedisClusterConfig config)
@@ -69,20 +69,15 @@ public class RedisClusterPeer implements ClusterPeer
 
     @Override
     @SuppressWarnings("unchecked")
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    public <K, V> DistributedMap<K, V> getCache(final String name)
     {
         final String realName = RedisKeyGenerator.key("shardedMap", Pair.of("cluster", clusterName), Pair.of("mapName", name));
-        ConcurrentMap<?, ?> result = cacheManager.get(realName);
+        DistributedMap<?, ?> result = cacheManager.get(realName);
         if (result == null)
         {
-            ConcurrentMap<?, ?>  targetMap = new RedisShardedMap<K, V>(realName, redisConnectionManager.getActorDirectoryClients(), config.getShardingBuckets());
-            result = cacheManager.putIfAbsent(realName, targetMap);
-            if (result == null)
-            {
-                result = targetMap;
-            }
+            result = cacheManager.computeIfAbsent(realName, s -> new RedisShardedMap<K, V>(s, redisConnectionManager.getActorDirectoryClients(), config.getShardingBuckets()));
         }
-        return (ConcurrentMap<K, V>) result;
+        return (DistributedMap<K, V>) result;
     }
 
     @Override

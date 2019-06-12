@@ -28,26 +28,26 @@
 
 package cloud.orbit.actors.cluster.impl;
 
+import org.redisson.api.RMap;
+
 import com.github.ssedano.hash.JumpConsistentHash;
 
-import cloud.orbit.exception.NotImplementedException;
+import cloud.orbit.actors.cluster.DistributedMap;
+import cloud.orbit.concurrent.Task;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * Created by joeh on 2017-01-26.
  */
-public class RedisShardedMap<K, V> implements ConcurrentMap<K, V>
+public class RedisShardedMap<K, V> implements DistributedMap<K, V>
 {
     private final Integer bucketCount;
     private final List<RedisOrbitClient> redissonClients;
     private final String mapName;
-    private final ConcurrentMap<String, ConcurrentMap<K, V>> cacheManager = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RMap<K, V>> cacheManager = new ConcurrentHashMap<>();
 
     public RedisShardedMap(final String mapName, final List<RedisOrbitClient> redissonClients, final Integer bucketCount) {
         this.mapName = mapName;
@@ -55,13 +55,13 @@ public class RedisShardedMap<K, V> implements ConcurrentMap<K, V>
         this.bucketCount = bucketCount;
     }
 
-    private ConcurrentMap<K, V> getBucketMap(final Integer bucket) {
+    private RMap<K, V> getBucketMap(final Integer bucket) {
         final String realName = mapName + "#" + bucket;
-        ConcurrentMap<K, V> result = cacheManager.get(realName);
+        RMap<K, V> result = cacheManager.get(realName);
         if (result == null)
         {
             final Integer clientId = JumpConsistentHash.jumpConsistentHash(realName, redissonClients.size());
-            ConcurrentMap<K, V> temp = redissonClients.get(clientId).getRedissonClient().getMap(realName);
+            RMap<K, V> temp = redissonClients.get(clientId).getRedissonClient().getMap(realName);
             result = cacheManager.putIfAbsent(realName, temp);
             if (result == null)
             {
@@ -71,114 +71,32 @@ public class RedisShardedMap<K, V> implements ConcurrentMap<K, V>
         return result;
     }
 
-    private ConcurrentMap<K, V> getRealMap(final Object key) {
+    private RMap<K, V> getRealMap(final Object key) {
         final Integer bucket = JumpConsistentHash.jumpConsistentHash(key, bucketCount);
         return getBucketMap(bucket);
     }
 
     @Override
-    public int size() {
-        int result = 0;
-        for(int i = 0; i < bucketCount; ++i) {
-            result += getBucketMap(i).size();
-        }
-        return result;
-    }
-
-    @Override
-    public boolean isEmpty()
+    public Task<V> putIfAbsent(final K k, final V v)
     {
-        for(int i = 0; i < bucketCount; ++i) {
-            if(!getBucketMap(i).isEmpty()) return false;
-        }
-        return true;
+        return Task.from(getRealMap(k).putIfAbsentAsync(k, v));
     }
 
     @Override
-    public boolean containsKey(Object key)
+    public Task<V> put(final K k, final V v)
     {
-        for(int i = 0; i < bucketCount; ++i) {
-            if(getBucketMap(i).containsKey(key)) return true;
-        }
-        return false;
+        return Task.from(getRealMap(k).putAsync(k, v));
     }
 
     @Override
-    public boolean containsValue(Object value)
+    public Task<V> get(final K k)
     {
-        for(int i = 0; i < bucketCount; ++i) {
-            if(getBucketMap(i).containsValue(value)) return true;
-        }
-        return false;
+        return Task.from(getRealMap(k).getAsync(k));
     }
 
     @Override
-    public V get(Object key)
+    public Task<Boolean> remove(final K k, final V v)
     {
-        return getRealMap(key).get(key);
+        return Task.from(getRealMap(k).removeAsync(k, v));
     }
-
-    @Override
-    public V put(K key, V value)
-    {
-        return getRealMap(key).put(key, value);
-    }
-
-    @Override
-    public V remove(Object key)
-    {
-        return getRealMap(key).remove(key);
-    }
-
-    @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
-        m.forEach((key, val) -> {
-            getRealMap(key).put(key, val);
-        });
-    }
-
-    @Override
-    public void clear() {
-        for(int i = 0; i < bucketCount; ++i) {
-            getBucketMap(i).clear();
-        }
-    }
-
-    @Override
-    public V putIfAbsent(final K key, final V value)
-    {
-        return getRealMap(key).putIfAbsent(key, value);
-    }
-
-    @Override
-    public boolean remove(Object key, Object value) {
-        return getRealMap(key).remove(key, value);
-    }
-
-    @Override
-    public boolean replace(K key, V oldValue, V newValue)
-    {
-        return getRealMap(key).replace(key, oldValue, newValue);
-    }
-
-    @Override
-    public V replace(K key, V value)
-    {
-        return getRealMap(key).replace(key, value);
-    }
-
-    @Override
-    public Set<K> keySet() {
-        throw new NotImplementedException("Can not use sets on sharded map");
-    }
-    @Override
-    public Collection<V> values() {
-        throw new NotImplementedException("Can not use sets on sharded map");
-    }
-    @Override
-    public Set<Map.Entry<K, V>> entrySet() {
-        throw new NotImplementedException("Can not use sets on sharded map");
-    }
-
-
 }
