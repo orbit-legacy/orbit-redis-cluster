@@ -28,11 +28,13 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * Created by joeh on 2017-04-20.
  */
 public interface RedisPipelineStep
 {
-    byte[] read(byte[] buf);
-    byte[] write(byte[] buf);
+    ByteBuf read(ByteBuf buf);
+    ByteBuf write(ByteBuf buf);
 }

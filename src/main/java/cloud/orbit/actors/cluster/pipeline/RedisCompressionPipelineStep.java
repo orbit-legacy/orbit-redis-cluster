@@ -28,6 +28,8 @@
 
 package cloud.orbit.actors.cluster.pipeline;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
@@ -39,44 +41,56 @@ import java.nio.ByteBuffer;
  */
 public class RedisCompressionPipelineStep implements RedisPipelineStep
 {
+    private static final int DECOMPRESSION_HEADER_SIZE = 4;
+
     private final LZ4Factory factory = LZ4Factory.fastestJavaInstance();
 
     @Override
-    public byte[] read(final byte[] buf)
+    public ByteBuf read(final ByteBuf buf)
     {
-        // Calculate initial lengths
-        final Integer rawLength = buf.length;
-        final Integer compressedLength = rawLength - 4;
+        try
+        {
+            int decompressSize = buf.readInt();
+            ByteBuf out = ByteBufAllocator.DEFAULT.buffer(decompressSize);
+            LZ4SafeDecompressor decompressor = factory.safeDecompressor();
+            ByteBuffer outBuffer = out.internalNioBuffer(out.writerIndex(), out.writableBytes());
+            int position = outBuffer.position();
 
-        // Create a byte buffer we can read
-        final ByteBuffer byteBuf = ByteBuffer.allocate(buf.length);
-        byteBuf.put(buf);
-        byteBuf.rewind();
+            decompressor.decompress(buf.internalNioBuffer(buf.readerIndex(), buf.readableBytes()), outBuffer);
 
-        // Extract the decompressed length
-        final Integer decompressedLength = byteBuf.getInt();
-        final byte[] decompressedBytes = new byte[decompressedLength];
-
-        // Get the compressed bytes
-        final byte[] compressedBytes = new byte[compressedLength];
-        byteBuf.get(compressedBytes);
-
-        // Decompress
-        final LZ4SafeDecompressor decompressor = factory.safeDecompressor();
-        decompressor.decompress(compressedBytes, decompressedBytes);
-
-        return decompressedBytes;
+            int compressedLength = outBuffer.position() - position;
+            out.writerIndex(compressedLength);
+            return out;
+        }
+        finally
+        {
+            buf.release();
+        }
     }
 
     @Override
-    public byte[] write(final byte[] uncompressedBytes)
+    public ByteBuf write(final ByteBuf buf)
     {
-        final LZ4Compressor compressor = factory.fastCompressor();
-        final byte[] compressedBytes = compressor.compress(uncompressedBytes);
-        final ByteBuffer buffer = ByteBuffer.allocate(compressedBytes.length + 4);
-        buffer.putInt(uncompressedBytes.length);
-        buffer.put(compressedBytes);
+        try
+        {
+            LZ4Compressor compressor = factory.fastCompressor();
+            ByteBuffer srcBuf = buf.internalNioBuffer(buf.readerIndex(), buf.readableBytes());
 
-        return buffer.array();
+            int outMaxLength = compressor.maxCompressedLength(buf.readableBytes());
+            ByteBuf out = ByteBufAllocator.DEFAULT.buffer(outMaxLength + DECOMPRESSION_HEADER_SIZE);
+            out.writeInt(buf.readableBytes());
+            ByteBuffer outBuf = out.internalNioBuffer(out.writerIndex(), out.writableBytes());
+            int position = outBuf.position();
+
+            compressor.compress(srcBuf, outBuf);
+
+            int compressedLength = outBuf.position() - position;
+            out.writerIndex(out.writerIndex() + compressedLength);
+            return out;
+        }
+        finally
+        {
+            buf.release();
+        }
     }
 }
