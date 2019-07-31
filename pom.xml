@@ -43,7 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Redis Cluster</name>
 
     <properties>
-        <orbit.version>1.13.0-rc1</orbit.version>
+        <orbit.version>1.14.0</orbit.version>
     </properties>
 
     <scm>
@@ -78,4 +78,81 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>1.3.0</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.redisson</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.redisson</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.netty</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>javax.cache</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.cache</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>reactor</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.reactor</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.reactivex</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.reactivex</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.reactivestreams</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.reactivestreams</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.reactivestreams</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.reactivestreams</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.nustaq</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.nustaq</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.fasterxml</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.fasterxml</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>javassist</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.javassist</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.objenesis</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.objenesis</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.yaml</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.yaml</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>net.jpountz.lz4</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.lz4</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>jodd</pattern>
+                                    <shadedPattern>cloud.orbit.redis.shaded.jodd</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
