@@ -52,15 +52,23 @@ public class RedisCompressionPipelineStep implements RedisPipelineStep
         {
             int decompressSize = buf.readInt();
             ByteBuf out = ByteBufAllocator.DEFAULT.buffer(decompressSize);
-            LZ4SafeDecompressor decompressor = factory.safeDecompressor();
-            ByteBuffer outBuffer = out.internalNioBuffer(out.writerIndex(), out.writableBytes());
-            int position = outBuffer.position();
+            try
+            {
+                LZ4SafeDecompressor decompressor = factory.safeDecompressor();
+                ByteBuffer outBuffer = out.internalNioBuffer(out.writerIndex(), out.writableBytes());
+                int position = outBuffer.position();
 
-            decompressor.decompress(buf.internalNioBuffer(buf.readerIndex(), buf.readableBytes()), outBuffer);
+                decompressor.decompress(buf.internalNioBuffer(buf.readerIndex(), buf.readableBytes()), outBuffer);
 
-            int compressedLength = outBuffer.position() - position;
-            out.writerIndex(compressedLength);
-            return out;
+                int compressedLength = outBuffer.position() - position;
+                out.writerIndex(compressedLength);
+                return out;
+            }
+            catch (Exception e) {
+                out.release();
+                throw e;
+            }
+
         }
         finally
         {
@@ -78,15 +86,23 @@ public class RedisCompressionPipelineStep implements RedisPipelineStep
 
             int outMaxLength = compressor.maxCompressedLength(buf.readableBytes());
             ByteBuf out = ByteBufAllocator.DEFAULT.buffer(outMaxLength + DECOMPRESSION_HEADER_SIZE);
-            out.writeInt(buf.readableBytes());
-            ByteBuffer outBuf = out.internalNioBuffer(out.writerIndex(), out.writableBytes());
-            int position = outBuf.position();
+            try
+            {
+                out.writeInt(buf.readableBytes());
+                ByteBuffer outBuf = out.internalNioBuffer(out.writerIndex(), out.writableBytes());
+                int position = outBuf.position();
 
-            compressor.compress(srcBuf, outBuf);
+                compressor.compress(srcBuf, outBuf);
 
-            int compressedLength = outBuf.position() - position;
-            out.writerIndex(out.writerIndex() + compressedLength);
-            return out;
+                int compressedLength = outBuf.position() - position;
+                out.writerIndex(out.writerIndex() + compressedLength);
+                return out;
+            }
+            catch (Exception e) {
+                out.release();
+                throw e;
+            }
+
         }
         finally
         {
