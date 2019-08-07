@@ -57,13 +57,23 @@ public class RedisPipelineCodec implements Codec
         @Override
         public Object decode(ByteBuf buf, State state) throws IOException
         {
-            // We are making a copy of the original input buffer to avoid having it be released by the pipelineStep.read() method.
-            ByteBuf temp = buf.copy();
+            // We must retain the original buffer, since the read method of the pipeline step
+            // always calls release on the input buffer. By incrementing the reference count, the release in the read() method
+            // will put the refCnt back to 1 which is what it was when we received it originally.
+            // For the subsequent calls that we make, the release on the input buffer is fine, since we created the previous input buffer, not the caller.
+            buf.retain();
             final ListIterator<RedisPipelineStep> li = pipelineSteps.listIterator(pipelineSteps.size());
             while (li.hasPrevious()) {
-                temp = li.previous().read(temp);
+                buf = li.previous().read(buf);
             }
-            return innerCodec.getValueDecoder().decode(temp, state);
+            try
+            {
+                return innerCodec.getValueDecoder().decode(buf, state);
+            }
+            finally
+            {
+                buf.release();
+            }
         }
     };
 
